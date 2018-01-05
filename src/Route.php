@@ -62,7 +62,7 @@ class Route
      * Sort the routes based on path so that more spcecific paths come first (e.g. before paths with wildcard
      * arguments.
      *
-     * @param array $routes
+     * @param Route[] $routes
      */
     static public function sortRoutes(&$routes)
     {
@@ -70,8 +70,8 @@ class Route
             $routes,
 
             function (Route $a, Route $b) {
-                $a_p = explode('/', $a->path);
-                $b_p = explode('/', $b->path);
+                $a_p = trim($a->path) == '/' ? [] : explode('/', $a->path);
+                $b_p = trim($b->path) == '/' ? [] : explode('/', $b->path);
                 $a_hw = strchr($a->path, '*') !== false;
                 $b_hw = strchr($b->path, '*') !== false;
                 if ($a_hw && !$b_hw) {
@@ -79,7 +79,7 @@ class Route
                 } elseif ($b_hw && !$a_hw) {
                     return -1;    // a first
                 } elseif ($b_hw && $a_hw) {
-                    return count($a_p) - count($b_p);
+                    return count($b_p) - count($a_p);
                 } else {
                     $count = min(count($a_p), count($b_p));
                     for ($i = 0; $i < $count; $i++) {
@@ -98,7 +98,7 @@ class Route
                         }
                     }
                     // All elements equal - shorter one first
-                    return count($a_p) - count($b_p);
+                    return count($b_p) - count($a_p);
                 }
 
             }

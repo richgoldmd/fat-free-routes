@@ -62,6 +62,10 @@ OUTPUT
         );
     }
 
+    /**
+     * @codeCoverageIgnore Difficult to test because of the way getopt() uses argc/argv
+     * @return ProcessParameters
+     */
     public static function getopts()
     {
         $p = new self();
