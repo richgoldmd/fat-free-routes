@@ -2,7 +2,9 @@
 
 namespace RichardGoldstein\FatFreeRoutes;
 
+use phpDocumentor\Reflection\Php\Method;
 use phpDocumentor\Reflection\File\LocalFile;
+use phpDocumentor\Reflection\Php\Class_;
 use phpDocumentor\Reflection\Php\ProjectFactory;
 
 
@@ -94,13 +96,144 @@ class MakeRoutes
         }
     }
 
+
+    /**
+     * @param Class_ $class
+     * @param ParsedFile $pf
+     *
+     * @return string routeBase
+     */
+    private function parseClass(Class_ $class, ParsedFile $pf)
+    {
+
+        if (null !== ($cdb = $class->getDocBlock()) && ($cdb->hasTag('routeBase'))) {
+            $tag = $cdb->getTagsByName('routeBase');
+            /** @noinspection PhpUndefinedMethodInspection */
+            $base = trim(explode("\n", $tag[0]->getDescription())[0]);
+            $this->echoVerbose("Class " . $class->getFqsen() . " Found base tag $base");
+        } else {
+            $base = '';
+        }
+        // Test for routeMap
+        if ($cdb !== null && ($cdb->hasTag('routeMap') || $cdb->hasTag('devrouteMap'))) {
+            $tags = array_merge($cdb->getTagsByName('routeMap'), $cdb->getTagsByName('devrouteMap'));
+            foreach ($tags as $tag) {
+                /** @noinspection PhpUndefinedMethodInspection */
+                $data = trim(explode("\n", $tag->getDescription())[0]);
+                preg_match(
+                    '/(?:@?(.+?)\h*:\h*)?(@(\w+)|[^\h]+)(?:\h+(?:\[(\w+)\]))?/',
+                    $data,
+                    $parts
+                );
+                // @alias: /some/path/@token [option,options,...]
+                // $alias = 1, $path = 2, option = 4
+                $rpath = $base . $parts[2];
+                if ($rpath != '/' && substr($rpath, -1, 1) == '/') {
+                    $rpath = substr($rpath, 0, -1);
+                }
+
+                /** @noinspection PhpUndefinedMethodInspection */
+                $pf->addRoute(
+                    new MapRoute(
+                        '',
+                        $class->getFqsen(),
+                        $rpath,
+                        strtolower($tag->getName()),
+                        $parts[1],
+                        isset($parts[4]) && in_array('js', explode(',', strtolower($parts[4])))
+                    )
+                );
+            }
+        }
+        return $base;
+
+    }
+
+    /**
+     * @param Class_ $class
+     * @param Method $method
+     * @param $base
+     * @param ParsedFile $pf
+     */
+    private function parseMethod(Class_ $class, Method $method, $base, ParsedFile $pf)
+    {
+        $db = $method->getDocBlock();
+
+        if (null !== $db) {
+
+            // Get all the tags that specify aliases to emit into js
+            $emitJStags = $db->getTagsByName('routeJS');
+            $js_aliases = [];
+            foreach ($emitJStags as $e) {
+                /** @noinspection PhpUndefinedMethodInspection */
+                $data = trim(explode("\n", $e->getDescription())[0]);
+                $aliases = explode(',', $data);
+                $js_aliases = array_merge(
+                    $js_aliases,
+                    array_filter(
+                        array_map(
+                            function ($e) {
+                                return trim($e) != '' ? trim($e) : null;
+                            },
+                            $aliases
+                        )
+                    )
+                );
+            }
+
+            $types = ['sync', 'ajax', 'cli'];
+
+
+
+            if (($db->hasTag('route') || $db->hasTag('devroute'))) {
+
+                $connector = $method->isStatic() ? '::' : '->';
+
+                $tags = array_merge($db->getTagsByName('route'), $db->getTagsByName('devroute'));
+                // Doesnt work on re-aliased routes
+
+                /** @var \phpDocumentor\Reflection\DocBlock\Tag $t */
+                foreach ($tags as $tag) {
+                    // Extract the path string ($parts[3])
+                    /** @noinspection PhpUndefinedMethodInspection */
+                    preg_match(
+                        '/([\|\w]+)\h+(?:(?:@?(.+?)\h*:\h*)?(@(\w+)|[^\h]+))' .
+                        '(?:\h+\[(' . implode('|', $types) . ')\])?/u',
+                        trim(explode("\n", $tag->getDescription())[0]),
+                        $parts
+                    );
+                    $rpath = $base . $parts[3];
+                    if ($rpath != '/' && substr($rpath, -1, 1) == '/') {
+                        $rpath = substr($rpath, 0, -1);
+                    }
+                    $rr =
+                        $parts[1] . ' ' .
+                        (trim($parts[2]) != '' ? ('@' . $parts[2] . ': ') : '') .
+                        $rpath .
+                        (isset($parts[5]) ? (' [' . $parts[5] . ']') : '');
+                    // Save the route in the current ParsedFile object
+                    /** @noinspection PhpUndefinedMethodInspection */
+                    $pf->addRoute(
+                        new Route(
+                            $rr, //'' . $tag->getDescription(),
+                            $class->getFqsen() . $connector . $method->getName(),
+                            $rpath, // $base  . $parts[3],
+                            strtolower($tag->getName()),
+                            $parts[2],
+                            in_array($parts[2], $js_aliases)
+                        )
+                    );
+                }
+            }
+        }
+
+    }
+
     private function parseFiles()
     {
         $projectFactory = ProjectFactory::createInstance();
         try {
             $project = $projectFactory->create('Routing', $this->filesToParse);
-
-            $types = ['sync', 'ajax', 'cli'];
 
 
             // Iterate the reflection of the files that needed updating and update the cache object
@@ -109,116 +242,18 @@ class MakeRoutes
                 // Create new Parsed File object
                 $pf = new ParsedFile($f->getPath());
 
+
                 // Iterate the classes and methods to find routes
                 // Locate methods with a @Route annotation
+                /** @var Class_ $class */
                 foreach ($f->getClasses() as $class) {
 
-                    if (null !== ($cdb = $class->getDocBlock()) && ($cdb->hasTag('routeBase'))) {
-                        $tag = $cdb->getTagsByName('routeBase');
-                        /** @noinspection PhpUndefinedMethodInspection */
-                        $base = trim(explode("\n", $tag[0]->getDescription())[0]);
-                        $this->echoVerbose("Class " . $class->getFqsen() . " Found base tag $base");
-                    } else {
-                        $base = '';
-                    }
+                    $base = $this->parseClass($class, $pf);
 
-                    // Test for routeMap
-                    if ($cdb !== null && ($cdb->hasTag('routeMap') || $cdb->hasTag('devrouteMap'))) {
-                        $tags = array_merge($cdb->getTagsByName('routeMap'), $cdb->getTagsByName('devrouteMap'));
-                        foreach ($tags as $tag) {
-                            /** @noinspection PhpUndefinedMethodInspection */
-                            $data = trim(explode("\n", $tag->getDescription())[0]);
-                            preg_match(
-                                '/(?:@?(.+?)\h*:\h*)?(@(\w+)|[^\h]+)(?:\h+(?:\[(\w+)\]))?/',
-                                $data,
-                                $parts
-                            );
-                            // @alias: /some/path/@token [option,options,...]
-                            // $alias = 1, $path = 2, option = 4
-                            $rpath = $base . $parts[2];
-                            if ($rpath != '/' && substr($rpath, -1, 1) == '/') {
-                                $rpath = substr($rpath, 0, -1);
-                            }
 
-                            /** @noinspection PhpUndefinedMethodInspection */
-                            $pf->addRoute(
-                                new MapRoute(
-                                    '',
-                                    $class->getFqsen(),
-                                    $rpath,
-                                    strtolower($tag->getName()),
-                                    $parts[1],
-                                    isset($parts[4]) && in_array('js', explode(',', strtolower($parts[4])))
-                                )
-                            );
-                        }
-                    }
+                    /** @var Method $method */
                     foreach ($class->getMethods() as $method) {
-                        $db = $method->getDocBlock();
-
-                        if (null !== $db) {
-
-                            // Get all the tags that specify aliases to emit into js
-                            $emitJStags = $db->getTagsByName('routeJS');
-                            $js_aliases = [];
-                            foreach ($emitJStags as $e) {
-                                /** @noinspection PhpUndefinedMethodInspection */
-                                $data = trim(explode("\n", $e->getDescription())[0]);
-                                $aliases = explode(',', $data);
-                                $js_aliases = array_merge(
-                                    $js_aliases,
-                                    array_filter(
-                                        array_map(
-                                            function ($e) {
-                                                return trim($e) != '' ? trim($e) : null;
-                                            },
-                                            $aliases
-                                        )
-                                    )
-                                );
-                            }
-
-                            if (($db->hasTag('route') || $db->hasTag('devroute'))) {
-
-                                $connector = $method->isStatic() ? '::' : '->';
-
-                                $tags = array_merge($db->getTagsByName('route'), $db->getTagsByName('devroute'));
-                                // Doesnt work on re-aliased routes
-
-                                /** @var \phpDocumentor\Reflection\DocBlock\Tag $t */
-                                foreach ($tags as $tag) {
-                                    // Extract the path string ($parts[3])
-                                    /** @noinspection PhpUndefinedMethodInspection */
-                                    preg_match(
-                                        '/([\|\w]+)\h+(?:(?:@?(.+?)\h*:\h*)?(@(\w+)|[^\h]+))' .
-                                        '(?:\h+\[(' . implode('|', $types) . ')\])?/u',
-                                        trim(explode("\n", $tag->getDescription())[0]),
-                                        $parts
-                                    );
-                                    $rpath = $base . $parts[3];
-                                    if ($rpath != '/' && substr($rpath, -1, 1) == '/') {
-                                        $rpath = substr($rpath, 0, -1);
-                                    }
-                                    $rr =
-                                        $parts[1] . ' ' .
-                                        (trim($parts[2]) != '' ? ('@' . $parts[2] . ': ') : '') .
-                                        $rpath .
-                                        (isset($parts[5]) ? (' [' . $parts[5] . ']') : '');
-                                    // Save the route in the current ParsedFile object
-                                    /** @noinspection PhpUndefinedMethodInspection */
-                                    $pf->addRoute(
-                                        new Route(
-                                            $rr, //'' . $tag->getDescription(),
-                                            $class->getFqsen() . $connector . $method->getName(),
-                                            $rpath, // $base  . $parts[3],
-                                            strtolower($tag->getName()),
-                                            $parts[2],
-                                            in_array($parts[2], $js_aliases)
-                                        )
-                                    );
-                                }
-                            }
-                        }
+                        $this->parseMethod($class, $method, $base, $pf);
                     }
                 }
                 // Add or update the ParsedFile object in the current cache
