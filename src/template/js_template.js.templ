@@ -1,0 +1,27 @@
+/*
+    Auto-generated routes file for FatFreeFramework project.
+    Tool by Rich Goldstein, MD
+*/
+
+var RouteAliases = {
+
+    "alias": function(name, data) {
+        if (this.routes.hasOwnProperty(name)) {
+            var r = this.routes[name];
+            return r.replace(/@([^@\/]+)/g, function (m1, m2) {
+                return data.hasOwnProperty(m2) ? data[m2] : '';
+            });
+        } else {
+            return '';
+        }
+    },
+    "routes": {
+%%CONTENT%%
+    }
+
+};
+/*
+Usage:
+    var url = RouteAliases.alias('removeCartItem', { cat: 'SomeCat', oid: 54 });
+*/
+// EOF

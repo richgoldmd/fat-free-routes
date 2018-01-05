@@ -1,0 +1,14 @@
+{
+    "name": "richardgoldstein/fat-free-routes",
+    "license": "MIT",
+    "keywords": ["fat free framework"],
+    "require": {
+        "php": ">=7.0",
+        "phpdocumentor/reflection": "dev-develop"
+    },
+    "autoload": {
+        "psr-4": {
+            "RichardGoldstein\\FatFreeRoutes\\": "src"
+        }
+    }
+}
