@@ -116,10 +116,42 @@ class MakeRoutes
                     if (null !== ($cdb = $class->getDocBlock()) && ($cdb->hasTag('routeBase'))) {
                         $tag = $cdb->getTagsByName('routeBase');
                         /** @noinspection PhpUndefinedMethodInspection */
-                        $base = trim($tag[0]->getDescription());
+                        $base = trim(explode("\n", $tag[0]->getDescription())[0]);
                         $this->echoVerbose("Class " . $class->getFqsen() . " Found base tag $base");
                     } else {
                         $base = '';
+                    }
+
+                    // Test for routeMap
+                    if ($cdb !== null && ($cdb->hasTag('routeMap') || $cdb->hasTag('devrouteMap'))) {
+                        $tags = array_merge($cdb->getTagsByName('routeMap'), $cdb->getTagsByName('devrouteMap'));
+                        foreach ($tags as $tag) {
+                            /** @noinspection PhpUndefinedMethodInspection */
+                            $data = trim(explode("\n", $tag->getDescription())[0]);
+                            preg_match(
+                                '/(?:@?(.+?)\h*:\h*)?(@(\w+)|[^\h]+)(?:\h+(?:\[(\w+)\]))?/',
+                                $data,
+                                $parts
+                            );
+                            // @alias: /some/path/@token [option,options,...]
+                            // $alias = 1, $path = 2, option = 4
+                            $rpath = $base . $parts[2];
+                            if ($rpath != '/' && substr($rpath, -1, 1) == '/') {
+                                $rpath = substr($rpath, 0, -1);
+                            }
+
+                            /** @noinspection PhpUndefinedMethodInspection */
+                            $pf->addRoute(
+                                new MapRoute(
+                                    '',
+                                    $class->getFqsen(),
+                                    $rpath,
+                                    strtolower($tag->getName()),
+                                    $parts[1],
+                                    isset($parts[4]) && in_array('js', explode(',', strtolower($parts[4])))
+                                )
+                            );
+                        }
                     }
                     foreach ($class->getMethods() as $method) {
                         $db = $method->getDocBlock();
@@ -131,7 +163,7 @@ class MakeRoutes
                             $js_aliases = [];
                             foreach ($emitJStags as $e) {
                                 /** @noinspection PhpUndefinedMethodInspection */
-                                $data = $e->getDescription();
+                                $data = trim(explode("\n", $e->getDescription())[0]);
                                 $aliases = explode(',', $data);
                                 $js_aliases = array_merge(
                                     $js_aliases,
@@ -160,7 +192,7 @@ class MakeRoutes
                                     preg_match(
                                         '/([\|\w]+)\h+(?:(?:@?(.+?)\h*:\h*)?(@(\w+)|[^\h]+))' .
                                         '(?:\h+\[(' . implode('|', $types) . ')\])?/u',
-                                        $tag->getDescription(),
+                                        trim(explode("\n", $tag->getDescription())[0]),
                                         $parts
                                     );
                                     $rpath = $base . $parts[3];
@@ -197,7 +229,8 @@ class MakeRoutes
         }
     }
 
-    private function renderTemplate($file, $content) {
+    private function renderTemplate($file, $content)
+    {
         $template = file_get_contents($file);
         if ($template === false) {
             cli_die("Error loading template file $file");
@@ -209,7 +242,7 @@ class MakeRoutes
     {
         $content = '';
         foreach ($this->routes as $r) {
-            if ($r->tag == 'route') {
+            if ($r->tag == 'route' || $r->tag == 'routemap') {
                 $content .= '    ' . $r->makePHP();
             }
         }
@@ -217,7 +250,7 @@ class MakeRoutes
         $content .= PHP_EOL . '   if ($includeDev) {' . PHP_EOL;
 
         foreach ($this->routes as $r) {
-            if ($r->tag == 'devroute') {
+            if ($r->tag == 'devroute' || $r->tag == 'devroutemap') {
                 $content .= '       ' . $r->makePHP();
             }
         }
@@ -237,7 +270,7 @@ class MakeRoutes
     {
         $lines = [];
         foreach ($this->routes as $r) {
-            if ($r->tag == 'route' && $r->emitJS && $r->alias != '') {
+            if (in_array($r->tag, ['route','routemap']) && $r->emitJS && $r->alias != '') {
                 $lines[] = "\t\t\"{$r->alias}\": \"{$r->path}\"";
             }
         }
