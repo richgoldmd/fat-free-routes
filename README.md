@@ -153,6 +153,42 @@ Example
          --cache-file=/myproject/src/generated/cache.f3r
 ```
 
+Installation
+------------
+`f3routes` can be installed via composer:
+```bash
+   composer require --dev richardgoldstein/fat-free-routes
+```
+You may need to specify the minimum stability as this is still in dev.
+
+Once installed via composer, `f3routes` can be found in vendor/bin:
+```bash
+   ./vendor/bin/f3routes --controller-dir=...
+```
+or
+```bash
+   composer exec f3routes ...
+```
+
+I include it in a gulp task:
+```js
+
+var run=require('gulp-run');
+
+// ...
+
+gulp.task('php-routes', ['clean-dist-app'], function(cb) {
+    var cmd = new run.Command([
+        './vendor/bin/f3routes',
+        '--cache-file=./conf/route-cache.f3r',
+        '--controller-dir=./src/controllers',
+        '--output-php=./conf/routes.php',
+        '--output-js=./assets/js/generated/routes.js'
+    ].join(' '));
+   cmd.exec('', cb);
+});
+
+```
 TODO
 ----
 1. Elaborate on the JavaScript output
