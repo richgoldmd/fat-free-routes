@@ -56,10 +56,27 @@ The following DocBlock tags can be used
 `@route`
 Applies to a class method, and follows the same syntax as Fat Free Framework routes, using
 the syntax 
-```php
+```
    @route <METHOD> [@alias:] path [ajax|cli|sync]
 ```
 Replaceable tokens can be used.
+
+`f3routes` supports additional values in the route modifier portion surrounded by brackets `[ ]`.
+This can be a comma-separated list of the existing F3 modifiers (ajax, cli, or sync), and the
+following addition modifiers:
+* `ttl=<number>` Set the `$ttl` parameter to `Base->route()`
+* `kbps=<number>` Set the `$kbps` parameter to `Base->route()`
+* `js` Expose the alias in the Javascript code. The is equivalent to including the alias in a `@routeJS` tag.
+
+The order of the items in the modifier section in unimportant, except that only the last
+one of `ajax`, `sync`, or `cli` are preserved.
+
+Here are some examples of `@route` tags using modifiers:
+
+```
+   @route GET|POST @alias: /some/path/@id [sync]
+   @route GET @alias2: /some/other/path [ajax,js,ttl=3600]
+```  
 
 `@devroute` Same as `@route` but only installed if installRoutes() is called with `true`.
 
@@ -67,7 +84,8 @@ Replaceable tokens can be used.
 aliases defined in the same docblock.
 
 `@routeBase` Specified in the DocBlock for the class, this prepends a path fragment to all
-of the route paths specified in the methods by `@route` or `@devroute`
+of the route paths specified in the methods by `@route` or `@devroute`. This is deprecated in 
+favor of the `[js]` modifier.
 
 `@routeMap` and `@devrouteMap` The equivalent of the F3 map function, these create routes for
 RESTful controllers. These also allow specification of an alias for exposure in the

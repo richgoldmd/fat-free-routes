@@ -33,21 +33,32 @@ class Route
      */
     public $alias;
     /**
-     * @var bool SHould this alias (if specified) be emitted into the rendered javascript?
+     * @var bool Should this alias (if specified) be emitted into the rendered javascript?
      */
     public $emitJS;
+
+    /**
+     * @var int|null The value for the F3 ttl parameter for route()
+     */
+    public $ttl;
+    /**
+     * @var int|null the value for the F3 bandwidth throttling parameter $kbps
+     */
+    public $kbps;
 
     /**
      * Route constructor.
      *
      * @param string $route The entire F3 route designator, as passed to $f3->route()
-     * @param string $dest The name of the method to call, as passed to $f3->route()
-     * @param string $path The route's url template
-     * @param string $tag The tag used to create this route (eg 'route' or 'devroute'
+     * @param string $dest  The name of the method to call, as passed to $f3->route()
+     * @param string $path  The route's url template
+     * @param string $tag   The tag used to create this route (eg 'route' or 'devroute'
      * @param string $alias Alias for this route
-     * @param bool $emitJS Does this route get emitted into the js file? (only if alias is present)
+     * @param bool $emitJS  Does this route get emitted into the js file? (only if alias is present)
+     * @param null|int $ttl
+     * @param null|int $kbps
      */
-    public function __construct($route, $dest, $path, $tag, $alias = '', $emitJS = false)
+    public function __construct($route, $dest, $path, $tag, $alias = '', $emitJS = false, $ttl = null, $kbps = null)
     {
         $this->route = $route;
         $this->dest = $dest;
@@ -55,6 +66,8 @@ class Route
         $this->tag = $tag;
         $this->alias = $alias;
         $this->emitJS = $emitJS;
+        $this->ttl = $ttl;
+        $this->kbps = $kbps;
     }
 
 
@@ -113,7 +126,17 @@ class Route
      */
     public function makePHP()
     {
-        return "\$f3->route('{$this->route}', '{$this->dest}');" . PHP_EOL;
+        $params = [
+            "'{$this->route}'",
+            "'{$this->dest}'",
+        ];
+        if ($this->kbps !== null) {
+            $params[] = (int)$this->ttl;
+            $params[] = (int)$this->kbps;
+        } elseif ($this->ttl !== null) {
+            $params[] = (int)$this->ttl;
+        }
+        return '$f3->route(' . implode(', ', $params) . ');' . PHP_EOL;
     }
 
 }

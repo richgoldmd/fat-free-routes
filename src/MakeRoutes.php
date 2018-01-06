@@ -114,6 +114,13 @@ class MakeRoutes
         } else {
             $base = '';
         }
+
+        /** var string $routeMapRegex
+         * The below code attempts to split the fourth grou pon commas, but this regex does not yet
+         * match commas in the [modifiers] group
+         */
+
+        $routeMapRegex = '/(?:@?(.+?)\h*:\h*)?(@(\w+)|[^\h]+)(?:\h+(?:\[(\w+)\]))?/';
         // Test for routeMap
         if ($cdb !== null && ($cdb->hasTag('routeMap') || $cdb->hasTag('devrouteMap'))) {
             $tags = array_merge($cdb->getTagsByName('routeMap'), $cdb->getTagsByName('devrouteMap'));
@@ -121,7 +128,7 @@ class MakeRoutes
                 /** @noinspection PhpUndefinedMethodInspection */
                 $data = trim(explode("\n", $tag->getDescription())[0]);
                 preg_match(
-                    '/(?:@?(.+?)\h*:\h*)?(@(\w+)|[^\h]+)(?:\h+(?:\[(\w+)\]))?/',
+                    $routeMapRegex,
                     $data,
                     $parts
                 );
@@ -183,6 +190,29 @@ class MakeRoutes
 
             $types = ['sync', 'ajax', 'cli'];
 
+            /*
+             * Original regex, which accepts only the above modifiers in the [] at the end of the route
+             */
+            /*
+            $routeRegex = '/([\|\w]+)\h+(?:(?:@?(.+?)\h*:\h*)?(@(\w+)|[^\h]+))' .
+                '(?:\h+\[(' . implode('|', $types) . ')\])?/u';
+            */
+
+            /*
+             * This regex matches bracket patterns like
+             * [ajax]
+             * [ajax,param=value]
+             * With allowance for spaces around the commas and equals
+             * [ param= value , param2 =value2 ]
+             *
+             * /\[\h*((?:\w+(?:\h*=\h*\w+)?\h*(?:,\h*)?)+)\]/
+             */
+            /*
+             * New Regex, which allows for word characters, equals, spaces, and commas
+             * \[\h*((?:\w+(?:\h*=\h*\w+)?\h*(?:,\h*)?)+)\]
+             */
+            $routeRegex = '/([\|\w]+)\h+(?:(?:@?(.+?)\h*:\h*)?(@(\w+)|[^\h]+))' .
+                '(?:\h+\[\h*((?:\w+(?:\h*=\h*\w+)?\h*(?:,\h*)?)+)\])?/u';
 
 
             if (($db->hasTag('route') || $db->hasTag('devroute'))) {
@@ -197,8 +227,7 @@ class MakeRoutes
                     // Extract the path string ($parts[3])
                     /** @noinspection PhpUndefinedMethodInspection */
                     preg_match(
-                        '/([\|\w]+)\h+(?:(?:@?(.+?)\h*:\h*)?(@(\w+)|[^\h]+))' .
-                        '(?:\h+\[(' . implode('|', $types) . ')\])?/u',
+                        $routeRegex,
                         trim(explode("\n", $tag->getDescription())[0]),
                         $parts
                     );
@@ -206,9 +235,56 @@ class MakeRoutes
                     if ($rpath != '/' && substr($rpath, -1, 1) == '/') {
                         $rpath = substr($rpath, 0, -1);
                     }
+                    // $parts 5 may have options not recognized by F3- so find those that are (only allows one)
+                    // and recompose $parts5
+                    $ttl = null;
+                    $kbps = null;
+                    $js = null;
+                    if (isset($parts[5])) {
+                        $options = trim($parts[5]);
+                        unset($parts[5]);
+                        if ($options == '') {
+                            unset($parts[5]);
+                        } else {
+                            $options = array_map(
+                                function ($o) {
+                                    $opt = explode('=', $o, 2);
+                                    $opt[0] = trim($opt[0]);
+                                    if (isset($opt[1])) {
+                                        $opt[1] = trim($opt[1]);
+                                    } else {
+                                        $opt[1] = null;   // so we dont have to check isset() again
+                                    }
+                                    return $opt;
+                                },
+                                explode(',', $options)
+                            );
+
+                            // set flags based on options
+                            foreach ($options as $opt) {
+                                if (in_array(strtolower($opt[0]), $types)) {
+                                    $parts[5] = strtolower($opt[0]);    // restore F3 type modifier
+                                } else {
+                                    switch (strtolower($opt[0])) {
+                                        case 'js':
+                                            $js = true;
+                                            break;
+                                        case 'ttl':
+                                            $ttl = (int)$opt[1];
+                                            break;
+                                        case 'kbps':
+                                            $kbps = (int)$opt[1];
+                                            break;
+
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    $parts[2] = trim($parts[2]);
                     $rr =
                         $parts[1] . ' ' .
-                        (trim($parts[2]) != '' ? ('@' . $parts[2] . ': ') : '') .
+                        ($parts[2] != '' ? ('@' . $parts[2] . ': ') : '') .
                         $rpath .
                         (isset($parts[5]) ? (' [' . $parts[5] . ']') : '');
                     // Save the route in the current ParsedFile object
@@ -220,7 +296,9 @@ class MakeRoutes
                             $rpath, // $base  . $parts[3],
                             strtolower($tag->getName()),
                             $parts[2],
-                            in_array($parts[2], $js_aliases)
+                            $js || in_array($parts[2], $js_aliases),
+                            $ttl,
+                            $kbps
                         )
                     );
                 }
@@ -305,7 +383,7 @@ class MakeRoutes
     {
         $lines = [];
         foreach ($this->routes as $r) {
-            if (in_array($r->tag, ['route','routemap']) && $r->emitJS && $r->alias != '') {
+            if (in_array($r->tag, ['route', 'routemap']) && $r->emitJS && $r->alias != '') {
                 $lines[] = "\t\t\"{$r->alias}\": \"{$r->path}\"";
             }
         }
