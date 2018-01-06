@@ -35,7 +35,7 @@ $f3->route('GET @alias: /path/here', 'MyFatFreeController->someHandler');
 ```
 or specifying the route in a config file.
 
-The too, `f3route` produces a php file suitable to be `required` in `index.php` and
+The tool, `f3route` produces a php file suitable to be `required` in `index.php` and
 provides a method to install the routes.
 ```php
 function installRoutes($includeDev = true) {
@@ -88,7 +88,7 @@ This is equivalent to
 ```php
 $f3->map('/company/@id', 'Company');
 ```
-If a routeBase is set, the map path will also be prepended.
+If a @routeBase is set, the map path will also be prepended.
 
 
 Command Line Parameters
@@ -121,6 +121,10 @@ Command Line Parameters
 
     This is an optional parameter. If specified, a fle containing JS code and a route map
     will be produced. Only routes explicitly flagged for JS output will be emitted,    
+
+
+One use case is to incorporate f3routes into a file watcher, and update the routes in 
+real-time as the controller classes are modified.
 
 Example
 -------
