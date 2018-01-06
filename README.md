@@ -57,13 +57,14 @@ The following DocBlock tags can be used
 Applies to a class method, and follows the same syntax as Fat Free Framework routes, using
 the syntax 
 ```
-   @route <METHOD> [@alias:] path [ajax|cli|sync]
+   @route <METHOD> @alias: path [ajax|cli|sync]
 ```
-Replaceable tokens can be used.
+Replaceable tokens can be used in the path. The alias is optional, as are the route modifiers
+in brackets `[  ]`.
 
 `f3routes` supports additional values in the route modifier portion surrounded by brackets `[ ]`.
 This can be a comma-separated list of the existing F3 modifiers (ajax, cli, or sync), and the
-following addition modifiers:
+following additional modifiers:
 * `ttl=<number>` Set the `$ttl` parameter to `Base->route()`
 * `kbps=<number>` Set the `$kbps` parameter to `Base->route()`
 * `js` Expose the alias in the Javascript code. The is equivalent to including the alias in a `@routeJS` tag.
