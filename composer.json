@@ -1,5 +1,6 @@
 {
   "name": "richardgoldstein/fat-free-routes",
+  "description": "Generate FatFreeFramework Routes from DocBlocks",
   "license": "MIT",
   "keywords": [
     "fat free framework"
