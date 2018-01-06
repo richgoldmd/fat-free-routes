@@ -35,7 +35,7 @@ $f3->route('GET @alias: /path/here', 'MyFatFreeController->someHandler');
 ```
 or specifying the route in a config file.
 
-The tool, `f3route` produces a php file suitable to be `required` in `index.php` and
+The tool, `f3routes` produces a php file suitable to be `required` in `index.php` and
 provides a method to install the routes.
 ```php
 function installRoutes($includeDev = true) {
