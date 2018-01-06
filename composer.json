@@ -13,5 +13,7 @@
     },
     "require-dev": {
         "phpunit/phpunit": "^6"
-    }
+    },
+    "bin": ["bin/f3routes"],
+
 }
