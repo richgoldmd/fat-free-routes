@@ -26,7 +26,7 @@ class MyFatFreeController {
    }
 
 }
-
+ 
 ```
 
 Adding the `@route` tag above is equivalent to calling 
