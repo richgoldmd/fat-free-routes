@@ -55,8 +55,8 @@ class Route
      * @param string $tag   The tag used to create this route (eg 'route' or 'devroute'
      * @param string $alias Alias for this route
      * @param bool $emitJS  Does this route get emitted into the js file? (only if alias is present)
-     * @param null|int $ttl
-     * @param null|int $kbps
+     * @param null|int $ttl The value for the $ttl paramater to Base->route(). None if null.
+     * @param null|int $kbps The value for the $kbps parameter to Base->route(). None if null.
      */
     public function __construct($route, $dest, $path, $tag, $alias = '', $emitJS = false, $ttl = null, $kbps = null)
     {
