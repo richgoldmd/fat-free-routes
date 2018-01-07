@@ -11,12 +11,6 @@ foreach ([__DIR__ . '/../../../autoload.php', __DIR__ . '/../vendor/autoload.php
     }
 }
 
-function cli_die($x = null) {
-	if ($x) {
-		fwrite(STDERR, $x);
-	}
-    exit(1);
-}
 
 /*
  * Command line parameters
@@ -32,5 +26,5 @@ function cli_die($x = null) {
 // getopts will cli_die() if the params are not valid.
 $proc = new MakeRoutes(\RichardGoldstein\FatFreeRoutes\ProcessParameters::getopts());
 $proc->run();
-
+echo $proc->getVerboseOutput();
 exit(0);

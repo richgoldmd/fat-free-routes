@@ -82,11 +82,10 @@ Here are some examples of `@route` tags using modifiers:
 `@devroute` Same as `@route` but only installed if installRoutes() is called with `true`.
 
 `@routeJS` specifies which aliases are exposed in Javascript. This can be a comma separated list of
-aliases defined in the same docblock.
+aliases defined in the same DocBlock. This is deprecated in favor of the `[js]` modifier.
 
 `@routeBase` Specified in the DocBlock for the class, this prepends a path fragment to all
-of the route paths specified in the methods by `@route` or `@devroute`. This is deprecated in 
-favor of the `[js]` modifier.
+of the route paths specified in the methods by `@route` or `@devroute`. 
 
 `@routeMap` and `@devrouteMap` The equivalent of the F3 map function, these create routes for
 RESTful controllers. These also allow specification of an alias for exposure in the

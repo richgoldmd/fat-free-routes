@@ -36,11 +36,9 @@ class ProcessParameters
 
     public static function usage($error = null)
     {
-        if ($error) {
-            echo PHP_EOL . $error . PHP_EOL . PHP_EOL;
-        }
+        $x = ($error) ? PHP_EOL . $error . PHP_EOL . PHP_EOL : '';
 
-        cli_die(
+        fwrite(STDERR, $x.
         <<<OUTPUT
 Usage: f3routes [options]
 
@@ -60,6 +58,7 @@ Example:
 
 OUTPUT
         );
+        exit(1);
     }
 
     /**

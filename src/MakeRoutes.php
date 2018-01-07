@@ -36,18 +36,54 @@ class MakeRoutes
      */
     private $routes = [];
 
+    /** @var string[] Verbose output */
+    private $output = [];
+
     public function __construct(ProcessParameters $p)
     {
         $this->params = $p;
     }
 
+    /**
+     * Handle verbose output
+     *
+     * @param string $t String to echo
+     */
     protected function echoVerbose($t)
     {
+        // Cache verbose output and render it only in case of no error,
+        // since STDOUT and STDERR will write asynchronously and terminal output is mangled.
         if ($this->params->verbose) {
-            echo $t . PHP_EOL;
+            $this->output[] = $t;
         }
     }
 
+    protected function die($x)
+    {
+        $this->output[] = '';
+        $this->output[] = $x;
+        if ($x) {
+            fwrite(STDERR, $this->getVerboseOutput());
+        }
+        exit(1);
+
+    }
+
+    public function getVerboseOutput()
+    {
+        if (count($this->output)) {
+            return implode(PHP_EOL, $this->output) . PHP_EOL;
+        } else {
+            return null;
+        }
+
+    }
+
+    /**
+     * Set up the RouteCache. If forcing then just create a new o   ne, otherwise attempt to
+     * load from the specified file. If file load fails, return gracefully with a new empty
+     * RouteCache object.
+     */
     protected function getRouteCache()
     {
         if ($this->params->force) {
@@ -68,6 +104,12 @@ class MakeRoutes
 
     }
 
+    /**
+     * Locate all of the files to parse within a specified directory and add to $this->filesToParse
+     * Skip files that have been cached and have not changed.
+     *
+     * @param $cdir
+     */
     private function iterateControllerDirectory($cdir)
     {
         if (strlen($cdir) > 1 && substr($cdir, -1, 1) != DIRECTORY_SEPARATOR) {
@@ -76,10 +118,15 @@ class MakeRoutes
         $dir = dir($cdir);
         while (false !== ($e = $dir->read())) {
             if (is_file($cdir . $e)) {
-                if ($this->routeCache->shouldReloadFile($cdir . $e)) {
-                    $this->filesToParse[] = new LocalFile($cdir . $e);
+                // Test extension - should be .php
+                if (substr(strrchr($e, "."), 1) != 'php') {
+                    $this->echoVerbose("Skipping non-php file {$cdir}{$e}.");
                 } else {
-                    $this->echoVerbose("Skipping unchanged file {$cdir}{$e}.");
+                    if ($this->routeCache->shouldReloadFile($cdir . $e)) {
+                        $this->filesToParse[] = new LocalFile($cdir . $e);
+                    } else {
+                        $this->echoVerbose("Skipping unchanged file {$cdir}{$e}.");
+                    }
                 }
             } elseif (is_dir($cdir . $e) && substr($e, 0, 1) != '.') {
                 // Recurse
@@ -88,6 +135,9 @@ class MakeRoutes
         }
     }
 
+    /**
+     * Iterator over all of the controller directories and search for files to parse
+     */
     private function buildFileList()
     {
         foreach ($this->params->controllers as $cpath) {
@@ -98,6 +148,8 @@ class MakeRoutes
 
 
     /**
+     * Parse the DocBlock of a class for @routeBase, @routeMap, and @devrouteMap
+     *
      * @param Class_ $class
      * @param ParsedFile $pf
      *
@@ -106,6 +158,8 @@ class MakeRoutes
     private function parseClass(Class_ $class, ParsedFile $pf)
     {
 
+        // TODO - Test that methods implied by routeMap exist in class - but this wont know any
+        // PREMAP value - ? set it on command line?
         if (null !== ($cdb = $class->getDocBlock()) && ($cdb->hasTag('routeBase'))) {
             $tag = $cdb->getTagsByName('routeBase');
             /** @noinspection PhpUndefinedMethodInspection */
@@ -116,40 +170,45 @@ class MakeRoutes
         }
 
         /** var string $routeMapRegex
-         * The below code attempts to split the fourth grou pon commas, but this regex does not yet
+         * The below code attempts to split the fourth group on commas, but this regex does not yet
          * match commas in the [modifiers] group
          */
 
         $routeMapRegex = '/(?:@?(.+?)\h*:\h*)?(@(\w+)|[^\h]+)(?:\h+(?:\[(\w+)\]))?/';
+
         // Test for routeMap
         if ($cdb !== null && ($cdb->hasTag('routeMap') || $cdb->hasTag('devrouteMap'))) {
             $tags = array_merge($cdb->getTagsByName('routeMap'), $cdb->getTagsByName('devrouteMap'));
             foreach ($tags as $tag) {
                 /** @noinspection PhpUndefinedMethodInspection */
                 $data = trim(explode("\n", $tag->getDescription())[0]);
-                preg_match(
-                    $routeMapRegex,
-                    $data,
-                    $parts
-                );
-                // @alias: /some/path/@token [option,options,...]
-                // $alias = 1, $path = 2, option = 4
-                $rpath = $base . $parts[2];
-                if ($rpath != '/' && substr($rpath, -1, 1) == '/') {
-                    $rpath = substr($rpath, 0, -1);
-                }
+                if (preg_match($routeMapRegex, $data, $parts)) {
+                    // @alias: /some/path/@token [option,options,...]
+                    // $alias = 1, $path = 2, option = 4
+                    $rpath = $base . $parts[2];
+                    if ($rpath != '/' && substr($rpath, -1, 1) == '/') {
+                        $rpath = substr($rpath, 0, -1);
+                    }
 
-                /** @noinspection PhpUndefinedMethodInspection */
-                $pf->addRoute(
-                    new MapRoute(
-                        '',
-                        $class->getFqsen(),
-                        $rpath,
-                        strtolower($tag->getName()),
-                        $parts[1],
-                        isset($parts[4]) && in_array('js', explode(',', strtolower($parts[4])))
-                    )
-                );
+                    /** @noinspection PhpUndefinedMethodInspection */
+                    $pf->addRoute(
+                        new MapRoute(
+                            '',
+                            $class->getFqsen(),
+                            $rpath,
+                            strtolower($tag->getName()),
+                            $parts[1],
+                            isset($parts[4]) && in_array('js', explode(',', strtolower($parts[4])))
+                        )
+                    );
+                } else {
+                    // This is an error that should halt processing
+                    /** @noinspection PhpUndefinedMethodInspection */
+                    $this->die(
+                        "Poorly formed @routeMap in {$pf->filename} [near line {$cdb->getLocation()->getLineNumber()}]: " .
+                        PHP_EOL . "\t@{$tag->getName()} $data"
+                    );
+                }
             }
         }
         return $base;
@@ -157,6 +216,8 @@ class MakeRoutes
     }
 
     /**
+     * Parse the DocBlock of a class method, looking for @route, @devroute, @routeJS
+     *
      * @param Class_ $class
      * @param Method $method
      * @param $base
@@ -215,6 +276,9 @@ class MakeRoutes
                 '(?:\h+\[\h*((?:\w+(?:\h*=\h*\w+)?\h*(?:,\h*)?)+)\])?/u';
 
 
+            // Collect aliases found to validate @routeJS
+            $aliases_found = [];
+
             if (($db->hasTag('route') || $db->hasTag('devroute'))) {
 
                 $connector = $method->isStatic() ? '::' : '->';
@@ -226,82 +290,101 @@ class MakeRoutes
                 foreach ($tags as $tag) {
                     // Extract the path string ($parts[3])
                     /** @noinspection PhpUndefinedMethodInspection */
-                    preg_match(
-                        $routeRegex,
-                        trim(explode("\n", $tag->getDescription())[0]),
-                        $parts
-                    );
-                    $rpath = $base . $parts[3];
-                    if ($rpath != '/' && substr($rpath, -1, 1) == '/') {
-                        $rpath = substr($rpath, 0, -1);
-                    }
-                    // $parts 5 may have options not recognized by F3- so find those that are (only allows one)
-                    // and recompose $parts5
-                    $ttl = null;
-                    $kbps = null;
-                    $js = null;
-                    if (isset($parts[5])) {
-                        $options = trim($parts[5]);
-                        unset($parts[5]);
-                        if ($options == '') {
+                    $descrip = trim(explode("\n", $tag->getDescription())[0]);
+                    if (preg_match($routeRegex, $descrip, $parts)) {
+                        $rpath = $base . $parts[3];
+                        if ($rpath != '/' && substr($rpath, -1, 1) == '/') {
+                            $rpath = substr($rpath, 0, -1);
+                        }
+                        // $parts 5 may have options not recognized by F3- so find those that are (only allows one)
+                        // and recompose $parts5
+                        $ttl = null;
+                        $kbps = null;
+                        $js = null;
+                        if (isset($parts[5])) {
+                            $options = trim($parts[5]);
                             unset($parts[5]);
-                        } else {
-                            $options = array_map(
-                                function ($o) {
-                                    $opt = explode('=', $o, 2);
-                                    $opt[0] = trim($opt[0]);
-                                    if (isset($opt[1])) {
-                                        $opt[1] = trim($opt[1]);
+                            if ($options == '') {
+                                unset($parts[5]);
+                            } else {
+                                $options = array_map(
+                                    function ($o) {
+                                        $opt = explode('=', $o, 2);
+                                        $opt[0] = trim($opt[0]);
+                                        if (isset($opt[1])) {
+                                            $opt[1] = trim($opt[1]);
+                                        } else {
+                                            $opt[1] = null;   // so we dont have to check isset() again
+                                        }
+                                        return $opt;
+                                    },
+                                    explode(',', $options)
+                                );
+
+                                // set flags based on options
+                                foreach ($options as $opt) {
+                                    if (in_array(strtolower($opt[0]), $types)) {
+                                        $parts[5] = strtolower($opt[0]);    // restore F3 type modifier
                                     } else {
-                                        $opt[1] = null;   // so we dont have to check isset() again
-                                    }
-                                    return $opt;
-                                },
-                                explode(',', $options)
-                            );
+                                        switch (strtolower($opt[0])) {
+                                            case 'js':
+                                                $js = true;
+                                                break;
+                                            case 'ttl':
+                                                $ttl = (int)$opt[1];
+                                                break;
+                                            case 'kbps':
+                                                $kbps = (int)$opt[1];
+                                                break;
 
-                            // set flags based on options
-                            foreach ($options as $opt) {
-                                if (in_array(strtolower($opt[0]), $types)) {
-                                    $parts[5] = strtolower($opt[0]);    // restore F3 type modifier
-                                } else {
-                                    switch (strtolower($opt[0])) {
-                                        case 'js':
-                                            $js = true;
-                                            break;
-                                        case 'ttl':
-                                            $ttl = (int)$opt[1];
-                                            break;
-                                        case 'kbps':
-                                            $kbps = (int)$opt[1];
-                                            break;
-
+                                        }
                                     }
                                 }
                             }
                         }
+                        $parts[2] = trim($parts[2]);
+                        if ($parts[2] != '') {
+                            $aliases_found[] = $parts[2];
+                        }
+                        $rr =
+                            $parts[1] . ' ' .
+                            ($parts[2] != '' ? ('@' . $parts[2] . ': ') : '') .
+                            $rpath .
+                            (isset($parts[5]) ? (' [' . $parts[5] . ']') : '');
+                        // Save the route in the current ParsedFile object
+                        /** @noinspection PhpUndefinedMethodInspection */
+                        $pf->addRoute(
+                            new Route(
+                                $rr, //'' . $tag->getDescription(),
+                                $class->getFqsen() . $connector . $method->getName(),
+                                $rpath, // $base  . $parts[3],
+                                strtolower($tag->getName()),
+                                $parts[2],
+                                $js || in_array($parts[2], $js_aliases),
+                                $ttl,
+                                $kbps
+                            )
+                        );
+                    } else {
+                        // This is an error that should halt processing
+                        /** @noinspection PhpUndefinedMethodInspection */
+                        $this->die(
+                            "Poorly formed @route in {$pf->filename} [near line {$db->getLocation()->getLineNumber()}]: " .
+                            PHP_EOL . "\t@{$tag->getName()} $descrip"
+                        );
                     }
-                    $parts[2] = trim($parts[2]);
-                    $rr =
-                        $parts[1] . ' ' .
-                        ($parts[2] != '' ? ('@' . $parts[2] . ': ') : '') .
-                        $rpath .
-                        (isset($parts[5]) ? (' [' . $parts[5] . ']') : '');
-                    // Save the route in the current ParsedFile object
-                    /** @noinspection PhpUndefinedMethodInspection */
-                    $pf->addRoute(
-                        new Route(
-                            $rr, //'' . $tag->getDescription(),
-                            $class->getFqsen() . $connector . $method->getName(),
-                            $rpath, // $base  . $parts[3],
-                            strtolower($tag->getName()),
-                            $parts[2],
-                            $js || in_array($parts[2], $js_aliases),
-                            $ttl,
-                            $kbps
-                        )
-                    );
                 }
+            }
+            // All of the routeJS aliases should be defined
+            $not_found = array_diff($js_aliases, $aliases_found);
+            if (count($not_found)) {
+                $this->die(
+                    "Undefined @routeJS alias" . (count($not_found) > 1 ? 'es' : '') .
+                    " in {$pf->filename} [near line {$db->getLocation()->getLineNumber()}]: " .
+                    PHP_EOL . "\t" .
+                    implode(', ', $not_found)
+                );
+
             }
         }
 
@@ -338,7 +421,7 @@ class MakeRoutes
                 $this->routeCache->addFile($pf);
             }
         } catch (\Exception $e) {
-            cli_die($e->getMessage());
+            $this->die($e->getMessage());
         }
     }
 
@@ -346,7 +429,7 @@ class MakeRoutes
     {
         $template = file_get_contents($file);
         if ($template === false) {
-            cli_die("Error loading template file $file");
+            $this->die("Error loading template file $file");
         }
         return str_replace('%%CONTENT%%', $content, $template);
     }
@@ -374,7 +457,7 @@ class MakeRoutes
                 $this->params->phpOutput,
                 $this->renderTemplate(__DIR__ . '/template/php_template.php.templ', $content)
             )) {
-            cli_die("Error writing output file {$this->params->phpOutput}.");
+            $this->die("Error writing output file {$this->params->phpOutput}.");
         }
 
     }
@@ -393,9 +476,40 @@ class MakeRoutes
                 $this->params->jsOutput,
                 $this->renderTemplate(__DIR__ . '/template/js_template.js.templ', $content)
             )) {
-            cli_die("Error writing output file {$this->params->phpOutput}.");
+            $this->die("Error writing output file {$this->params->phpOutput}.");
         }
 
+    }
+
+    /**
+     *
+     */
+    private function checkForErrors()
+    {
+        // Test for duplicates
+        $aliases = array_filter(
+            array_map(
+                function (Route $rl) {
+                    return ($rl->alias !== null && trim($rl->alias) != '') ? trim($rl->alias) : null;
+                },
+                $this->routes
+            )
+        );
+        $duplicates = array_unique(array_diff_assoc($aliases, array_unique($aliases)));
+        if (count($duplicates)) {
+            $this->die(
+                "Duplicate aliases found:" . PHP_EOL . "\t" .
+                implode(
+                    ', ',
+                    array_map(
+                        function ($a) {
+                            return "@{$a}";
+                        },
+                        $duplicates
+                    )
+                )
+            );
+        }
     }
 
     public function run()
@@ -410,13 +524,17 @@ class MakeRoutes
         // Parse the files
         $this->parseFiles();
 
+        $this->routes = $this->routeCache->getSortedList();
+
+        // Check for duplicates...
+        $this->checkForErrors();
+
         // Save route cache file if specified
         if ($this->params->cacheFilename) {
             $this->echoVerbose("Saving cache file {$this->params->cacheFilename}.");
             $this->routeCache->saveToFile($this->params->cacheFilename);
         }
         //
-        $this->routes = $this->routeCache->getSortedList();
         //
         // Write the PHP File
         $this->echoVerbose("Writing PHP File {$this->params->phpOutput}.");
