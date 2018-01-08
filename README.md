@@ -108,6 +108,20 @@ $f3->map('/company/@id', 'Company');
 ```
 If a @routeBase is set, the map path will also be prepended.
 
+Note that f3routes supports the proposed PSR-5 PHPDoc standard: all tags can be prefixed 
+or namespaced with `f3routes`. The following are equivalent:
+
+```php
+   /**
+    *
+    * @route GET /mypath
+    * @f3routes-route GET /mypath
+    * @f3routes\route GET /mypath
+    * @\f3routes\route GET /mypath
+    */
+    public function myHandler(....) {
+        // ...
+```
 
 Command Line Parameters
 -----------------------

@@ -2,6 +2,7 @@
 
 namespace RichardGoldstein\FatFreeRoutes;
 
+use phpDocumentor\Reflection\DocBlock\Tag;
 use phpDocumentor\Reflection\Php\Method;
 use phpDocumentor\Reflection\File\LocalFile;
 use phpDocumentor\Reflection\Php\Class_;
@@ -77,6 +78,58 @@ class MakeRoutes
             return null;
         }
 
+    }
+
+    /**
+     * Retrive a list if matching tags.
+     *The DoicBlock is searched for exact matches as well as the same tag prefeixed by f3routes\, \f3routes\, or f3routes-
+     *
+     * @param array $tagNames Array of tagnames.
+     *
+     * @param array $prefixRequiredTagNames
+     * @param Tag[] $tagList
+     *
+     * @return array Each element is [ $tagBase, $tag ] where $tagBase is the tag less and prefix (f3routes)
+     */
+    protected function getTags(array $tagNames, array $prefixRequiredTagNames, array $tagList)
+    {
+        $matches = [];
+        $tagSelector = implode(
+            '|',
+            array_map(
+                function ($tn) {
+                    return preg_quote($tn, '/');
+                },
+                $tagNames
+            )
+        );
+        $tagSelectorPrefixed = implode(
+            '|',
+            array_map(
+                function ($tn) {
+                    return preg_quote($tn, '/');
+                },
+                $prefixRequiredTagNames
+            )
+        );
+        $hasTagNames = count($tagNames);
+        $hasPrefixedTagNames = count($prefixRequiredTagNames);
+        foreach ($tagList as $tag) {
+            $tn = trim($tag->getName());
+            if (($hasTagNames && preg_match(
+                    '/^(?:\\\\?f3routes\\\\|f3routes-)?(' . $tagSelector . ')$/u',
+                    $tn,
+                    $m
+                )) ||
+                ($hasPrefixedTagNames && preg_match(
+                    '/^(?:\\\\?f3routes\\\\|f3routes-)(' . $tagSelectorPrefixed . ')$/',
+                    $tn,
+                    $m
+                ))) {
+                $matches[] = [$m[1], $tag];
+            }
+        }
+        return $matches;
     }
 
     /**
@@ -157,16 +210,25 @@ class MakeRoutes
      */
     private function parseClass(Class_ $class, ParsedFile $pf)
     {
+        $base = '';
 
         // TODO - Test that methods implied by routeMap exist in class - but this wont know any
         // PREMAP value - ? set it on command line?
-        if (null !== ($cdb = $class->getDocBlock()) && ($cdb->hasTag('routeBase'))) {
-            $tag = $cdb->getTagsByName('routeBase');
-            /** @noinspection PhpUndefinedMethodInspection */
-            $base = trim(explode("\n", $tag[0]->getDescription())[0]);
-            $this->echoVerbose("Class " . $class->getFqsen() . " Found base tag $base");
-        } else {
-            $base = '';
+        if (null !== ($cdb = $class->getDocBlock()) ) {
+            $tags = $this->getTags(['routeBase'], [], $cdb->getTags());
+            // only one routeBase allowed!
+            if (count($tags) > 1) {
+                //$cn = $class->getName();
+                /** @noinspection PhpUndefinedMethodInspection */
+                $this->die(
+                    "Multiple @routeBase specified for class {$class->getName()} in  {$pf->filename} [near line {$cdb->getLocation()->getLineNumber()}]: " .
+                    PHP_EOL . "\t@{$tags[1][1]->getName()} {$tags[1][1]->getDescription()}");
+
+            } else if (count($tags) == 1) {
+                /** @noinspection PhpUndefinedMethodInspection */
+                $base = trim(explode("\n", $tags[0][1]->getDescription())[0]);
+                $this->echoVerbose("Class " . $class->getFqsen() . " Found base tag $base");
+            }
         }
 
         /** var string $routeMapRegex
@@ -177,11 +239,11 @@ class MakeRoutes
         $routeMapRegex = '/(?:@?(.+?)\h*:\h*)?(@(\w+)|[^\h]+)(?:\h+(?:\[(\w+)\]))?/';
 
         // Test for routeMap
-        if ($cdb !== null && ($cdb->hasTag('routeMap') || $cdb->hasTag('devrouteMap'))) {
-            $tags = array_merge($cdb->getTagsByName('routeMap'), $cdb->getTagsByName('devrouteMap'));
-            foreach ($tags as $tag) {
+        if ($cdb !== null /*&& ($cdb->hasTag('routeMap') || $cdb->hasTag('devrouteMap')) */) {
+            $routeMapTags = $this->getTags(['routeMap','devrouteMap'], [], $cdb->getTags());
+            foreach ($routeMapTags as $rtag) {
                 /** @noinspection PhpUndefinedMethodInspection */
-                $data = trim(explode("\n", $tag->getDescription())[0]);
+                $data = trim(explode("\n", $rtag[1]->getDescription())[0]);
                 if (preg_match($routeMapRegex, $data, $parts)) {
                     // @alias: /some/path/@token [option,options,...]
                     // $alias = 1, $path = 2, option = 4
@@ -196,7 +258,7 @@ class MakeRoutes
                             '',
                             $class->getFqsen(),
                             $rpath,
-                            strtolower($tag->getName()),
+                            strtolower($rtag[0]),
                             $parts[1],
                             isset($parts[4]) && in_array('js', explode(',', strtolower($parts[4])))
                         )
@@ -206,7 +268,7 @@ class MakeRoutes
                     /** @noinspection PhpUndefinedMethodInspection */
                     $this->die(
                         "Poorly formed @routeMap in {$pf->filename} [near line {$cdb->getLocation()->getLineNumber()}]: " .
-                        PHP_EOL . "\t@{$tag->getName()} $data"
+                        PHP_EOL . "\t@{$rtag[1]->getName()} $data"
                     );
                 }
             }
@@ -228,13 +290,13 @@ class MakeRoutes
         $db = $method->getDocBlock();
 
         if (null !== $db) {
+            $js_aliases = [];
+            $jsTags = $this->getTags(['routeJS'], [], $db->getTags());
 
             // Get all the tags that specify aliases to emit into js
-            $emitJStags = $db->getTagsByName('routeJS');
-            $js_aliases = [];
-            foreach ($emitJStags as $e) {
+            foreach ($jsTags as $rtag) {
                 /** @noinspection PhpUndefinedMethodInspection */
-                $data = trim(explode("\n", $e->getDescription())[0]);
+                $data = trim(explode("\n", $rtag[1]->getDescription())[0]);
                 $aliases = explode(',', $data);
                 $js_aliases = array_merge(
                     $js_aliases,
@@ -278,19 +340,19 @@ class MakeRoutes
 
             // Collect aliases found to validate @routeJS
             $aliases_found = [];
-
-            if (($db->hasTag('route') || $db->hasTag('devroute'))) {
+            $rtags = $this->getTags(['route','devroute'], [], $db->getTags());
+            //if (($db->hasTag('route') || $db->hasTag('devroute'))) {
+            if (count($rtags)) {
 
                 $connector = $method->isStatic() ? '::' : '->';
 
-                $tags = array_merge($db->getTagsByName('route'), $db->getTagsByName('devroute'));
                 // Doesnt work on re-aliased routes
 
                 /** @var \phpDocumentor\Reflection\DocBlock\Tag $t */
-                foreach ($tags as $tag) {
+                foreach ($rtags as $rtag) {
                     // Extract the path string ($parts[3])
                     /** @noinspection PhpUndefinedMethodInspection */
-                    $descrip = trim(explode("\n", $tag->getDescription())[0]);
+                    $descrip = trim(explode("\n", $rtag[1]->getDescription())[0]);
                     if (preg_match($routeRegex, $descrip, $parts)) {
                         $rpath = $base . $parts[3];
                         if ($rpath != '/' && substr($rpath, -1, 1) == '/') {
@@ -358,7 +420,7 @@ class MakeRoutes
                                 $rr, //'' . $tag->getDescription(),
                                 $class->getFqsen() . $connector . $method->getName(),
                                 $rpath, // $base  . $parts[3],
-                                strtolower($tag->getName()),
+                                strtolower($rtag[0]),
                                 $parts[2],
                                 $js || in_array($parts[2], $js_aliases),
                                 $ttl,
@@ -370,7 +432,7 @@ class MakeRoutes
                         /** @noinspection PhpUndefinedMethodInspection */
                         $this->die(
                             "Poorly formed @route in {$pf->filename} [near line {$db->getLocation()->getLineNumber()}]: " .
-                            PHP_EOL . "\t@{$tag->getName()} $descrip"
+                            PHP_EOL . "\t@{$rtag[1]->getName()} $descrip"
                         );
                     }
                 }
