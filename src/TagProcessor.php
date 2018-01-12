@@ -120,6 +120,7 @@ class TagProcessor implements PluginRegistrar
 
             }
 
+            $this->echoVerbose('Done.');
         } catch (\Exception $e) {
             file_put_contents('php://stderr', $e->getMessage() . PHP_EOL);
             exit(1);
@@ -211,13 +212,15 @@ class TagProcessor implements PluginRegistrar
      */
     private function getRouteCache()
     {
+        $this->cacheFileName = $this->getOpt->getOption('cache-file');
+
         if ($this->getOpt->getOption('force')) {
             $this->parsedFileCache = new ParsedFileCache();
             $this->echoVerbose("Forcing rebuild of route table.");
             return;
         }
 
-        if (null !== ($this->cacheFileName = $this->getOpt->getOption('cache-file'))) {
+        if (null !== $this->cacheFileName ) {
             $this->parsedFileCache = ParsedFileCache::loadFromFile($this->cacheFileName, $didSucceed);
             if ($didSucceed) {
                 $this->echoVerbose("ParsedFileCache loaded from {$this->cacheFileName}");
