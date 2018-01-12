@@ -1,6 +1,11 @@
 FatFreeRoutes
 =============
 
+#### Note that this version (legacy branch) is deprecated. 
+The code has been refactored into a pluggable architecture . See the master branch. 
+
+***
+ 
 PHP >= 7.0 (To use the tool), 
 PHP >= 5.4 (For generated code)
 
