@@ -9,12 +9,6 @@ Note the following:
 
 ***
 
-### Note that this version is being deprecated and has been moved to the legacy branch 
-The code has been refactored into a pluggable architecture to allow for future expansion, 
-and will be posted shortly.
-
-***
-
 PHP >= 7.0 (To use the tool), 
 PHP >= 5.4 (For generated code)
 
