@@ -11,7 +11,7 @@ namespace RichardGoldstein\FatFreeRoutes;
  * Date: 8/29/17
  * Time: 1:16 PM
  */
-class RouteCache
+class ParsedFileCache
 {
     /**
      * @var ParsedFile[]
@@ -78,14 +78,14 @@ class RouteCache
     }
 
     /**
-     * Load a RouteCache from a file.
+     * Load a ParsedFileCache from a file.
      * This method is paranoid about serialization errors. Since its a dev-time tool, we handle gracefully
      * but return a flag so failure can be reported.
      *
      * @param $filename
      * @param $didSucceed
      *
-     * @return mixed|RouteCache
+     * @return mixed|ParsedFileCache
      */
     public static function loadFromFile($filename, &$didSucceed) {
         if (!file_exists($filename)) {

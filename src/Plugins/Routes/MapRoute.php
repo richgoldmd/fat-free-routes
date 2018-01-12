@@ -6,7 +6,7 @@
  * Time: 4:12 PM
  */
 
-namespace RichardGoldstein\FatFreeRoutes;
+namespace RichardGoldstein\FatFreeRoutes\Plugins\Routes;
 
 
 /**

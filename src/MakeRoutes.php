@@ -23,7 +23,7 @@ class MakeRoutes
     private $params;
 
     /**
-     * @var RouteCache
+     * @var ParsedFileCache
      */
     private $routeCache = null;
 
@@ -133,26 +133,26 @@ class MakeRoutes
     }
 
     /**
-     * Set up the RouteCache. If forcing then just create a new o   ne, otherwise attempt to
+     * Set up the ParsedFileCache. If forcing then just create a new o   ne, otherwise attempt to
      * load from the specified file. If file load fails, return gracefully with a new empty
-     * RouteCache object.
+     * ParsedFileCache object.
      */
     protected function getRouteCache()
     {
         if ($this->params->force) {
-            $this->routeCache = new RouteCache();
+            $this->routeCache = new ParsedFileCache();
             $this->echoVerbose("Forcing rebuild of route table.");
             return;
         }
         if ($this->params->cacheFilename) {
-            $this->routeCache = RouteCache::loadFromFile($this->params->cacheFilename, $didSucceed);
+            $this->routeCache = ParsedFileCache::loadFromFile($this->params->cacheFilename, $didSucceed);
             if ($didSucceed) {
-                $this->echoVerbose("RouteCache loaded from {$this->params->cacheFilename}");
+                $this->echoVerbose("ParsedFileCache loaded from {$this->params->cacheFilename}");
             } else {
-                $this->echoVerbose("Could not load RouteCache from file. Continuing anyway.");
+                $this->echoVerbose("Could not load ParsedFileCache from file. Continuing anyway.");
             }
         } else {
-            $this->routeCache = new RouteCache();
+            $this->routeCache = new ParsedFileCache();
         }
 
     }

@@ -52,7 +52,7 @@ Generate Fat Free Framework Route table from DocBlock tags
     --output-js=<filename>     The file to create the js alias router in. Optional.
 
 Example:
-    f3routes -v --cache-file=/myproject/routeCache.f3r --controller-dir=/myproject/controllers \\
+    f3routes -v --cache-file=/myproject/parsedFileCache.f3r --controller-dir=/myproject/controllers \\
             --output-php=/myproject/src/generated/routes.php
 
 

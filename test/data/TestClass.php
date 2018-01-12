@@ -5,22 +5,21 @@
  * Class TestClass
  * @xrouteBase /base
  * @xf3routes\routeBase /base
- * @x\f3routes\routeBase /base
- * @f3routes-routeBase
+ * @\f3routes\routeBase /base/@id/12
+ * x@f3routes-routeBase /base
  *
- * @f3routes\routeMap /map
+ * @f3routes\routeMap /map [js]
  */
 class TestClass
 {
 
     /**
-     * @route GET @somealias: /here
-     * @f3routes-route POST /here/f3-routes/post
+     * @route POST @somealias: /here [js]
+     * @f3routes-route POST @jsalias: /here/f3-routes/post [js]
      * @f3routes\route POST /here/namespaced
-     * @\f3routes\devroute POST /dev/namespaced
+     * @\f3routes\devroute POST /dev/namespaced [ajax,ttl=3600,kbps=64]
      * @f3routes-devroute POST|GET /dev/prefixed
-     *
-     * @\f3routes\routeJS somealias
+     * @f4routes-route GET /nope
      */
     public function handler()
     {

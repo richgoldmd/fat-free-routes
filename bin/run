@@ -1,0 +1,22 @@
+#!/usr/bin/env php
+<?php
+
+use RichardGoldstein\FatFreeRoutes\MakeRoutes;
+
+foreach ([__DIR__ . '/../../../autoload.php', __DIR__ . '/../vendor/autoload.php'] as $file) {
+    if (file_exists($file)) {
+        /** @noinspection PhpIncludeInspection */
+        require $file;
+        break;
+    }
+}
+
+
+$t = new \RichardGoldstein\FatFreeRoutes\TagProcessor();
+$x = new \RichardGoldstein\FatFreeRoutes\Plugins\Routes\RoutePlugin();
+$x->register($t);
+
+// Register plugins
+// Run
+$t->run();
+exit(0);
