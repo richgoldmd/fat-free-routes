@@ -9,15 +9,16 @@
 namespace RichardGoldstein\FatFreeRoutes;
 
 use PHPUnit\Framework\TestCase;
+use RichardGoldstein\FatFreeRoutes\Plugins\Routes\Route;
 
-class RouteCacheTest extends TestCase
+class ParsedFileCacheTest extends TestCase
 {
 
     public function testAddFile()
     {
         $testFile = __DIR__ . '/data/testPhpFile.php';
         $pf = new ParsedFile(__FILE__);
-        $rc = new RouteCache();
+        $rc = new ParsedFileCache();
         $rc->addFile($pf);
         $rc->addFile(new ParsedFile($testFile));
         $this->assertEquals(2, count($rc->files));
@@ -28,7 +29,7 @@ class RouteCacheTest extends TestCase
     public function testShouldReloadFile()
     {
         $testFile = __DIR__ . '/data/testPhpFile.php';
-        $rc = new RouteCache();
+        $rc = new ParsedFileCache();
         $this->assertTrue($rc->shouldReloadFile(__FILE__));
         $this->assertTrue($rc->shouldReloadFile($testFile));
 
@@ -49,26 +50,27 @@ class RouteCacheTest extends TestCase
     private function makeRouteCache()
     {
         $pf1 = new ParsedFile(__FILE__);
-        $pf1->addRoute(new Route('1','1','1','route'));
-        $pf1->addRoute(new Route('2','2','2','route'));
-        $pf1->addRoute(new Route('3','3','3','route'));
-        $pf1->addRoute(new Route('4','4','4','route'));
-        $pf1->addRoute(new Route('5','5','5','route'));
-        $pf1->addRoute(new Route('6','6','6','route'));
+        $pf1->addData(get_class(), new Route('1','1','1','route'));
+        $pf1->addData(get_class(), new Route('2','2','2','route'));
+        $pf1->addData(get_class(), new Route('3','3','3','route'));
+        $pf1->addData(get_class(), new Route('4','4','4','route'));
+        $pf1->addData(get_class(), new Route('5','5','5','route'));
+        $pf1->addData(get_class(), new Route('6','6','6','route'));
 
         $testFile = __DIR__ . '/data/testPhpFile.php';
 
         $pf2 = new ParsedFile($testFile);
-        $pf1->addRoute(new Route('10','10','10','route'));
-        $pf1->addRoute(new Route('11','11','11','route'));
-        $pf1->addRoute(new Route('12','12','12','route'));
+        $pf1->addData(get_class(), new Route('10','10','10','route'));
+        $pf1->addData(get_class(), new Route('11','11','11','route'));
+        $pf1->addData(get_class(), new Route('12','12','12','route'));
 
-        $rc = new RouteCache();
+        $rc = new ParsedFileCache();
         $rc->addFile($pf1);
         $rc->addFile($pf2);
         return $rc;
     }
 
+    /*
     public function testGetSortedList()
     {
         // Should return a merged list of sorted routes from ParsedFile.
@@ -88,6 +90,7 @@ class RouteCacheTest extends TestCase
 
 
     }
+    */
 
     public function testSaveToFile()
     {
@@ -105,11 +108,15 @@ class RouteCacheTest extends TestCase
 
     /**
      * @depends testSaveToFile
+     *
+     * @param string $fn
+     *
+     * @return string
      */
     public function testLoadFromFile($fn)
     {
-        RouteCache::loadFromFile($fn, $didSucceed);
-        $this->assertTrue($didSucceed, "Unable to load RouteCache from file.");
+        ParsedFileCache::loadFromFile($fn, $didSucceed);
+        $this->assertTrue($didSucceed, "Unable to load ParsedFileCache from file.");
         return $fn;
     }
 
@@ -121,14 +128,14 @@ class RouteCacheTest extends TestCase
      * @return string
      */
     public function testLoadFromFileWithBadClass($fn) {
-        // Mangle the file by replacing the classname RouteCache with RouteCacheX
+        // Mangle the file by replacing the classname ParsedFileCache with RouteCacheX
         $read = file_get_contents($fn);
-        $this->assertTrue($read !== false, "Unable to read the RouteCache file from disk");
-        $text = str_replace('RichardGoldstein\FatFreeRoutes\RouteCache', 'RichardGoldstein\FatFreeRoutes\RouteCacheX', $read);
+        $this->assertTrue($read !== false, "Unable to read the ParsedFileCache file from disk");
+        $text = str_replace('RichardGoldstein\FatFreeRoutes\ParsedFileCache', 'RichardGoldstein\FatFreeRoutes\RouteCacheX', $read);
         $write = file_put_contents($fn, $text);
-        $this->assertTrue($write !== false, "Unable to write RouteCache file back to disk");
+        $this->assertTrue($write !== false, "Unable to write ParsedFileCache file back to disk");
 
-        RouteCache::loadFromFile($fn, $didSucceed);
+        ParsedFileCache::loadFromFile($fn, $didSucceed);
         $this->assertFalse($didSucceed, "Mangled Route Cache file was loaded.");
         return $fn;
     }
@@ -143,9 +150,9 @@ class RouteCacheTest extends TestCase
         @unlink($fn);
         $this->assertFileNotExists($fn, 'Could not ensure that test file did not exist before test');
         $write = file_put_contents($fn, 'x');
-        $this->assertTrue($write !== false, "Unable to write RouteCache file back to disk");
+        $this->assertTrue($write !== false, "Unable to write ParsedFileCache file back to disk");
 
-        RouteCache::loadFromFile($fn, $didSucceed);
+        ParsedFileCache::loadFromFile($fn, $didSucceed);
         $this->assertFalse($didSucceed, "Mangled Route Cache file was loaded.");
         return $fn;
 
@@ -162,9 +169,9 @@ class RouteCacheTest extends TestCase
         @unlink($fn);
         $this->assertFileNotExists($fn, 'Could not ensure that test file did not exist before test');
         $write = file_put_contents($fn, '');
-        $this->assertTrue($write !== false, "Unable to write RouteCache file back to disk");
+        $this->assertTrue($write !== false, "Unable to write ParsedFileCache file back to disk");
 
-        RouteCache::loadFromFile($fn, $didSucceed);
+        ParsedFileCache::loadFromFile($fn, $didSucceed);
         $this->assertFalse($didSucceed, "Empty Route Cache file was loaded.");
         return $fn;
     }
@@ -179,7 +186,7 @@ class RouteCacheTest extends TestCase
         @unlink($fn);
         $this->assertFileNotExists($fn, 'Could not ensure that test file did not exist before test');
 
-        RouteCache::loadFromFile($fn, $didSucceed);
+        ParsedFileCache::loadFromFile($fn, $didSucceed);
         $this->assertFalse($didSucceed, "Non existent Route Cache file was loaded.");
         return $fn;
     }

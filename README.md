@@ -1,5 +1,13 @@
 FatFreeRoutes
 =============
+#### Note:
+This tool has been completely refactored into a plugable architecture to allow for future expansion. 
+Note the following:
+1. The command line parameter names have changed
+2. The @routeJS tag is no longer supported, and has been replaced by the `[js]` modifier.
+3. The documentation is a work-in-progress.
+
+***
 
 ### Note that this version is being deprecated and has been moved to the legacy branch 
 The code has been refactored into a pluggable architecture to allow for future expansion, 
@@ -12,7 +20,8 @@ PHP >= 5.4 (For generated code)
 
 This development tool allows one to specify routes in the 
 [Fat Free Framework](http://fatfreeframework.com) in DocBlock format in the 
-controller class.
+controller class. Furthermore, it is build with a pluggable interface to allow for future
+expansion beyond route generation.
 
 Example
 --------
@@ -49,7 +58,8 @@ function installRoutes($includeDev = true) {
 }
 ```
 
-Require the generated file in `index.php` and call `installRoutes($includeDev);` before calling `$f3->run();`
+Require the generated file in `index.php` and call `installRoutes($includeDev);` 
+before calling `$f3->run();`
 
 There is also the option to generate a JavaScript file so that routes can be easily built in 
 Javascript for front-end use.
@@ -73,7 +83,7 @@ This can be a comma-separated list of the existing F3 modifiers (ajax, cli, or s
 following additional modifiers:
 * `ttl=<number>` Set the `$ttl` parameter to `Base->route()`
 * `kbps=<number>` Set the `$kbps` parameter to `Base->route()`
-* `js` Expose the alias in the Javascript code. The is equivalent to including the alias in a `@routeJS` tag.
+* `js` Expose the alias in the Javascript code. 
 
 The order of the items in the modifier section in unimportant, except that only the last
 one of `ajax`, `sync`, or `cli` are preserved.
@@ -86,9 +96,6 @@ Here are some examples of `@route` tags using modifiers:
 ```  
 
 `@devroute` Same as `@route` but only installed if installRoutes() is called with `true`.
-
-`@routeJS` specifies which aliases are exposed in Javascript. This can be a comma separated list of
-aliases defined in the same DocBlock. This is deprecated in favor of the `[js]` modifier.
 
 `@routeBase` Specified in the DocBlock for the class, this prepends a path fragment to all
 of the route paths specified in the methods by `@route` or `@devroute`. 
@@ -146,10 +153,10 @@ Command Line Parameters
     files that have changed need to be re-parsed. The same cache file should be 
     used on subsequent calls for the same project.
     
-* `--controller-dir=<directory>`
+* `--source-dir=<directory>`
 
-    *This is required.* Specifies the directory that contains controller files. This
-    parameter can be specified more than once. Directories are scanned recusrsively.
+    *This is required.* Specifies the directory that contains PHP files. This
+    parameter can be specified more than once. Directories are scanned recursively.
     
 * `--output-php=<file>`
 
@@ -167,7 +174,7 @@ real-time as the controller classes are modified.
 Example
 -------
 ```bash
-   f3routes --controller-dir=/myprojects/src/controllers \
+   f3routes --source-dir=/myprojects/src/controllers \
          --output-php=/myproject/src/generated/routes.php \
          --cache-file=/myproject/src/generated/cache.f3r
 ```
@@ -200,7 +207,7 @@ gulp.task('php-routes', ['clean-dist-app'], function(cb) {
     var cmd = new run.Command([
         './vendor/bin/f3routes',
         '--cache-file=./conf/route-cache.f3r',
-        '--controller-dir=./src/controllers',
+        '--source-dir=./src/controllers',
         '--output-php=./conf/routes.php',
         '--output-js=./assets/js/generated/routes.js'
     ].join(' '));
@@ -211,6 +218,8 @@ gulp.task('php-routes', ['clean-dist-app'], function(cb) {
 TODO
 ----
 1. Elaborate on the JavaScript output
-2. Command Line Parameters
+2. [Plug-In documentation](PLUGINS.md)
+3. Needs new unit tests since refactoring.
 3. More examples
 4. How to use the rendered PHP and JavaScript
+

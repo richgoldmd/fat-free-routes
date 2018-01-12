@@ -9,6 +9,7 @@
 namespace RichardGoldstein\FatFreeRoutes;
 
 use PHPUnit\Framework\TestCase;
+use RichardGoldstein\FatFreeRoutes\Plugins\Routes\Route;
 
 class ParsedFileTest extends TestCase
 {
@@ -23,9 +24,9 @@ class ParsedFileTest extends TestCase
     public function testAddRoute()
     {
         $pf = new ParsedFile(__FILE__);
-        $pf->addRoute(new Route('1', '2', '3', '4'));
-        $pf->addRoute(new Route('1', '2', '3', '4'));
-        $pf->addRoute(new Route('1', '2', '3', '4'));
-        $this->assertEquals(3, count($pf->routes));
+        $pf->addData(get_class(), new Route('1', '2', '3', '4'));
+        $pf->addData(get_class(), new Route('1', '2', '3', '4'));
+        $pf->addData(get_class(),new Route('1', '2', '3', '4'));
+        $this->assertEquals(3, count($pf->getData(get_class())));
     }
 }

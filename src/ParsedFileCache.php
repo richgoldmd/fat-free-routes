@@ -11,7 +11,7 @@ namespace RichardGoldstein\FatFreeRoutes;
  * Date: 8/29/17
  * Time: 1:16 PM
  */
-class RouteCache
+class ParsedFileCache
 {
     /**
      * @var ParsedFile[]
@@ -20,7 +20,6 @@ class RouteCache
 
     public function __construct() {
     }
-
 
     /**
      * Add a ParsedFile object to this cache
@@ -47,22 +46,6 @@ class RouteCache
     }
 
     /**
-     * Return an array or Route objects, sorted for source code generation
-     *
-     * @return Route[]
-     */
-    public function getSortedList()
-    {
-        $a = [];
-        /** @var ParsedFile $f */
-        foreach ($this->files as $f) {
-            $a = array_merge($a, $f->routes);
-        }
-        Route::sortRoutes($a);
-        return $a;
-    }
-
-    /**
      * Save the cache to a file.
      * @param $filename
      *
@@ -78,14 +61,14 @@ class RouteCache
     }
 
     /**
-     * Load a RouteCache from a file.
+     * Load a ParsedFileCache from a file.
      * This method is paranoid about serialization errors. Since its a dev-time tool, we handle gracefully
      * but return a flag so failure can be reported.
      *
      * @param $filename
      * @param $didSucceed
      *
-     * @return mixed|RouteCache
+     * @return mixed|ParsedFileCache
      */
     public static function loadFromFile($filename, &$didSucceed) {
         if (!file_exists($filename)) {

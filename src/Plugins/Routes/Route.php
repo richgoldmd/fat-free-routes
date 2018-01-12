@@ -1,6 +1,6 @@
 <?php
 
-namespace RichardGoldstein\FatFreeRoutes;
+namespace RichardGoldstein\FatFreeRoutes\Plugins\Routes;
 
 /**
  * Route data obtained from the Reflection classes.
@@ -10,7 +10,7 @@ namespace RichardGoldstein\FatFreeRoutes;
  * Date: 8/29/17
  * Time: 1:25 PM
  */
-class Route
+class Route implements \Serializable
 {
     /**
      * @var string The F3 Route parameter
@@ -49,13 +49,13 @@ class Route
     /**
      * Route constructor.
      *
-     * @param string $route The entire F3 route designator, as passed to $f3->route()
-     * @param string $dest  The name of the method to call, as passed to $f3->route()
-     * @param string $path  The route's url template
-     * @param string $tag   The tag used to create this route (eg 'route' or 'devroute'
-     * @param string $alias Alias for this route
-     * @param bool $emitJS  Does this route get emitted into the js file? (only if alias is present)
-     * @param null|int $ttl The value for the $ttl paramater to Base->route(). None if null.
+     * @param string $route  The entire F3 route designator, as passed to $f3->route()
+     * @param string $dest   The name of the method to call, as passed to $f3->route()
+     * @param string $path   The route's url template
+     * @param string $tag    The tag used to create this route (eg 'route' or 'devroute'
+     * @param string $alias  Alias for this route
+     * @param bool $emitJS   Does this route get emitted into the js file? (only if alias is present)
+     * @param null|int $ttl  The value for the $ttl paramater to Base->route(). None if null.
      * @param null|int $kbps The value for the $kbps parameter to Base->route(). None if null.
      */
     public function __construct($route, $dest, $path, $tag, $alias = '', $emitJS = false, $ttl = null, $kbps = null)
@@ -137,6 +137,38 @@ class Route
             $params[] = (int)$this->ttl;
         }
         return '$f3->route(' . implode(', ', $params) . ');' . PHP_EOL;
+    }
+
+
+    public function serialize()
+    {
+        return serialize(
+            [
+                $this->route,
+                $this->dest,
+                $this->path,
+                $this->tag,
+                $this->alias,
+                $this->emitJS,
+                $this->ttl,
+                $this->kbps
+            ]
+        );
+    }
+
+    public function unserialize($serialized)
+    {
+        list(
+            $this->route,
+            $this->dest,
+            $this->path,
+            $this->tag,
+            $this->alias,
+            $this->emitJS,
+            $this->ttl,
+            $this->kbps
+            ) = unserialize($serialized);
+
     }
 
 }

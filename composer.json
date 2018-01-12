@@ -7,7 +7,8 @@
   ],
   "require": {
     "php": ">=7.0",
-    "phpdocumentor/reflection": "dev-develop"
+    "phpdocumentor/reflection": "dev-develop",
+    "ulrichsg/getopt-php": "^3.1"
   },
   "autoload": {
     "psr-4": {
