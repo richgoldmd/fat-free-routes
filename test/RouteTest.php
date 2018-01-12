@@ -9,6 +9,7 @@
 namespace RichardGoldstein\FatFreeRoutes;
 
 use PHPUnit\Framework\TestCase;
+use RichardGoldstein\FatFreeRoutes\Plugins\Routes\Route;
 
 class RouteTest extends TestCase
 {

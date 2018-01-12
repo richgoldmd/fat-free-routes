@@ -9,8 +9,9 @@
 namespace RichardGoldstein\FatFreeRoutes;
 
 use PHPUnit\Framework\TestCase;
+use RichardGoldstein\FatFreeRoutes\Plugins\Routes\Route;
 
-class RouteCacheTest extends TestCase
+class ParsedFileCacheTest extends TestCase
 {
 
     public function testAddFile()
@@ -49,19 +50,19 @@ class RouteCacheTest extends TestCase
     private function makeRouteCache()
     {
         $pf1 = new ParsedFile(__FILE__);
-        $pf1->addRoute(new Route('1','1','1','route'));
-        $pf1->addRoute(new Route('2','2','2','route'));
-        $pf1->addRoute(new Route('3','3','3','route'));
-        $pf1->addRoute(new Route('4','4','4','route'));
-        $pf1->addRoute(new Route('5','5','5','route'));
-        $pf1->addRoute(new Route('6','6','6','route'));
+        $pf1->addData(get_class(), new Route('1','1','1','route'));
+        $pf1->addData(get_class(), new Route('2','2','2','route'));
+        $pf1->addData(get_class(), new Route('3','3','3','route'));
+        $pf1->addData(get_class(), new Route('4','4','4','route'));
+        $pf1->addData(get_class(), new Route('5','5','5','route'));
+        $pf1->addData(get_class(), new Route('6','6','6','route'));
 
         $testFile = __DIR__ . '/data/testPhpFile.php';
 
         $pf2 = new ParsedFile($testFile);
-        $pf1->addRoute(new Route('10','10','10','route'));
-        $pf1->addRoute(new Route('11','11','11','route'));
-        $pf1->addRoute(new Route('12','12','12','route'));
+        $pf1->addData(get_class(), new Route('10','10','10','route'));
+        $pf1->addData(get_class(), new Route('11','11','11','route'));
+        $pf1->addData(get_class(), new Route('12','12','12','route'));
 
         $rc = new ParsedFileCache();
         $rc->addFile($pf1);
@@ -69,6 +70,7 @@ class RouteCacheTest extends TestCase
         return $rc;
     }
 
+    /*
     public function testGetSortedList()
     {
         // Should return a merged list of sorted routes from ParsedFile.
@@ -88,6 +90,7 @@ class RouteCacheTest extends TestCase
 
 
     }
+    */
 
     public function testSaveToFile()
     {
@@ -105,6 +108,10 @@ class RouteCacheTest extends TestCase
 
     /**
      * @depends testSaveToFile
+     *
+     * @param string $fn
+     *
+     * @return string
      */
     public function testLoadFromFile($fn)
     {

@@ -21,7 +21,6 @@ class ParsedFileCache
     public function __construct() {
     }
 
-
     /**
      * Add a ParsedFile object to this cache
      * @param ParsedFile $f
@@ -44,22 +43,6 @@ class ParsedFileCache
             return true;
         }
         return $this->files[$filename]->mtime < filemtime($filename);
-    }
-
-    /**
-     * Return an array or Route objects, sorted for source code generation
-     *
-     * @return Route[]
-     */
-    public function getSortedList()
-    {
-        $a = [];
-        /** @var ParsedFile $f */
-        foreach ($this->files as $f) {
-            $a = array_merge($a, $f->routes);
-        }
-        Route::sortRoutes($a);
-        return $a;
     }
 
     /**
