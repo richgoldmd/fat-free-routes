@@ -155,7 +155,7 @@ class TagProcessor implements PluginRegistrar
                 }
             }
         } catch (ArgumentException $exception) {
-            file_put_contents('php://stderr', $exception->getMessage() . PHP_EOL);
+            file_put_contents('php://stderr', PHP_EOL . $exception->getMessage() . PHP_EOL);
             echo PHP_EOL . $this->getOpt->getHelpText() . PHP_EOL . $this->additionalHelp;
             exit(1);
         }
@@ -286,17 +286,14 @@ class TagProcessor implements PluginRegistrar
             // Locate methods with a @Route annotation
             /** @var Class_ $class */
             foreach ($f->getClasses() as $class) {
-                echo $class->getFqsen() . PHP_EOL;
 
                 $this->pluginMgr->processClass($pf, $class);
 
 
                 /** @var Method $method */
                 foreach ($class->getMethods() as $method) {
-                    //echo $method->getFqsen() . PHP_EOL;
                     $this->pluginMgr->processMethod($pf, $class, $method);
                 }
-                echo PHP_EOL;
             }
             // Add or update the ParsedFile object in the current cache
             $this->parsedFileCache->addFile($pf);
