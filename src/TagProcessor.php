@@ -157,7 +157,7 @@ class TagProcessor implements PluginRegistrar
         } catch (ArgumentException $exception) {
             file_put_contents('php://stderr', $exception->getMessage() . PHP_EOL);
             echo PHP_EOL . $this->getOpt->getHelpText() . PHP_EOL . $this->additionalHelp;
-            exit;
+            exit(1);
         }
     }
 
