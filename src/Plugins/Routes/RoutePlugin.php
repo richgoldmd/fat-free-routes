@@ -228,7 +228,7 @@ class RoutePlugin extends Plugin
                     get_class(),
                     new Route(
                         $rr,
-                        $fqsen . $connector . $method->getName(),
+                        (string)$class->getFqsen() . $connector . $method->getName(),
                         $rpath,
                         strtolower($tag),
                         $parts[2],
