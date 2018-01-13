@@ -28,6 +28,16 @@ class PluginManager implements PluginRegistrar
         $this->plugins[get_class($p)] = new PluginEntry($p);
     }
 
+    /**
+     * @return int
+     */
+    public function countActive()
+    {
+        return array_reduce($this->plugins, function($c, $o) {
+            return $c + ($o->active ? 1 : 0);
+        }, 0);
+    }
+
     private function getRegex($prefix, $tags, $prefixMandatory)
     {
         if (!is_array($tags) || !count($tags)) {

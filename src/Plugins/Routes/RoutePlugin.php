@@ -9,6 +9,8 @@
 namespace RichardGoldstein\FatFreeRoutes\Plugins\Routes;
 
 
+use GetOpt\GetOpt;
+use GetOpt\Option;
 use phpDocumentor\Reflection\Php\Class_;
 use phpDocumentor\Reflection\Php\Method;
 use RichardGoldstein\FatFreeRoutes\ParsedFile;
@@ -22,6 +24,22 @@ class RoutePlugin extends Plugin
 
     // Post-parse data
     private $routes = [];
+
+
+    public function setCommandLineOptions(GetOpt $opts)
+    {
+        $opts->addOption(
+            Option::create(null, 'no-f3routes', GetOpt::NO_ARGUMENT)
+                  ->setDescription('Disable the Fat-Free Routes plugin.')
+        );
+        return '';
+    }
+
+    public function parseOptions(GetOpt $opts)
+    {
+        // Return false if this is disabled.
+        return !$opts->getOption('no-f3routes');
+    }
 
     public function tagsToProcess()
     {

@@ -80,6 +80,9 @@ class TagProcessor implements PluginRegistrar
             // 4. Allow the plugins to get info from paramaters
             $this->pluginMgr->parseOptions($this->getOpt);
 
+            if (!$this->pluginMgr->countActive()) {
+                throw new \Exception('There are no active plugins. No action taken.');
+            }
             // 5. Prepare the plugins with the default prefix
             $this->pluginMgr->preparePlugins('f3routes');
 
@@ -135,8 +138,8 @@ class TagProcessor implements PluginRegistrar
                 $this->getOpt->process();
 
                 if ($this->getOpt->getOption('help')) {
-                    echo $this->getOpt->getHelpText() . PHP_EOL . $this->additionalHelp;
-                    exit;
+                    echo $this->getOpt->getHelpText() . PHP_EOL . $this->additionalHelp . PHP_EOL;
+                    exit(0);
                 }
 
                 // Test require options
@@ -156,7 +159,7 @@ class TagProcessor implements PluginRegistrar
             }
         } catch (ArgumentException $exception) {
             file_put_contents('php://stderr', PHP_EOL . $exception->getMessage() . PHP_EOL);
-            echo PHP_EOL . $this->getOpt->getHelpText() . PHP_EOL . $this->additionalHelp;
+            echo PHP_EOL . $this->getOpt->getHelpText() . PHP_EOL . $this->additionalHelp . PHP_EOL;
             exit(1);
         }
     }
