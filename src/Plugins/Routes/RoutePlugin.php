@@ -17,15 +17,8 @@ use RichardGoldstein\FatFreeRoutes\Plugins\Plugin;
 
 class RoutePlugin extends Plugin
 {
-    // Note the synchronous nature of the system - class level docblocks always precede method level ones in the same class
-    // So the context can be tracked accordingly.
-    private $currentClass = '*';
     private $hasRouteBase = false;
     private $routeBase = '';
-
-    // Method context - Note that routeJS must follow the corrsponding alias
-    private $currentMethod = '*';
-    private $methodRouteAliases = [];
 
     // Post-parse data
     private $routes = [];
@@ -50,6 +43,13 @@ class RoutePlugin extends Plugin
     const ROUTE_MAP_REGEX = '/(?:@?(.+?)\h*:\h*)?(@(\w+)|[^\h]+)(?:\h+(?:\[(\w+)\]))?/';
 
 
+    public function startClass(ParsedFile $pf, Class_ $class)
+    {
+        parent::startClass($pf, $class);
+        $this->hasRouteBase = false;
+        $this->routeBase = '';
+    }
+
     /**
      * @param ParsedFile $pf
      * @param Class_ $class
@@ -61,11 +61,7 @@ class RoutePlugin extends Plugin
     public function processClassTag(ParsedFile $pf, Class_ $class, $tag, $content)
     {
         $fqsen = (string)$class->getFqsen();
-        if ($fqsen != $this->currentClass) {
-            $this->currentClass = $fqsen;
-            $this->hasRouteBase = false;
-            $this->routeBase = '';
-        }
+
         // We only use the first line of the docBlock
         $content = trim(explode("\n", $content)[0]);
 
@@ -82,6 +78,7 @@ class RoutePlugin extends Plugin
                         throw new \Exception("Poorly formed routeBase: $content");
                     }
                     $this->routeBase = $content;
+                    $this->hasRouteBase = true;
                     $this->echoVerbose("Class $fqsen: @routeBase {$this->routeBase}");
                 }
                 break;
@@ -158,10 +155,6 @@ class RoutePlugin extends Plugin
     public function processMethodTag(ParsedFile $pf, Class_ $class, Method $method, $tag, $content)
     {
         $fqsen = (string)$method->getFqsen();
-        if ($fqsen != $this->currentClass) {
-            $this->currentMethod = $fqsen;
-            $this->methodRouteAliases = [];
-        }
 
         $content = trim(explode("\n", $content)[0]);
 
@@ -251,7 +244,7 @@ class RoutePlugin extends Plugin
 
                 $cdb = $method->getDocBlock();
                 throw new \Exception(
-                    "Poorly formed @routeMap in {$pf->filename} [near line {$cdb->getLocation()->getLineNumber()}]: " .
+                    "Poorly formed @route in {$pf->filename} [near line {$cdb->getLocation()->getLineNumber()}]: " .
                     "@{$tag} {$content}"
                 );
 

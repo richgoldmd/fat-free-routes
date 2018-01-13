@@ -97,12 +97,45 @@ abstract class Plugin
     abstract function tagsToProcess();
 
     /**
+     * Called before the specified class is parsed
+     * @param ParsedFile $pf
+     * @param Class_ $class
+     */
+    public function startClass(ParsedFile $pf, Class_ $class)
+    {
+
+    }
+
+    /**
      * @param ParsedFile $pf
      * @param Class_ $class
      * @param string $tag
      * @param string $content
      */
     public function processClassTag(ParsedFile $pf, Class_ $class, $tag, $content)
+    {
+
+    }
+
+
+    /**
+     * Called after the specified class and its methods are parsed
+     * @param ParsedFile $pf
+     * @param Class_ $class
+     */
+    public function endClass(ParsedFile $pf, Class_ $class)
+    {
+
+    }
+
+
+    /**
+     * Called before the specified method is parsed
+     * @param ParsedFile $pf
+     * @param Class_ $class
+     * @param Method $method
+     */
+    public function startMethod(ParsedFile $pf, Class_ $class, Method $method)
     {
 
     }
@@ -115,6 +148,18 @@ abstract class Plugin
      * @param string $content
      */
     public function processMethodTag(ParsedFile $pf, Class_ $class, Method $method, $tag, $content)
+    {
+
+    }
+
+    /**
+     * Called after the specified method is parsed
+     *
+     * @param ParsedFile $pf
+     * @param Class_ $class
+     * @param Method $method
+     */
+    public function endMethod(ParsedFile $pf, Class_ $class, Method $method)
     {
 
     }

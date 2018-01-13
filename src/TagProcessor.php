@@ -287,14 +287,21 @@ class TagProcessor implements PluginRegistrar
             /** @var Class_ $class */
             foreach ($f->getClasses() as $class) {
 
+                $this->pluginMgr->startClass($pf, $class);
                 $this->pluginMgr->processClass($pf, $class);
 
 
                 /** @var Method $method */
                 foreach ($class->getMethods() as $method) {
+                    $this->pluginMgr->startMethod($pf, $class, $method);
                     $this->pluginMgr->processMethod($pf, $class, $method);
+                    $this->pluginMgr->endMethod($pf, $class, $method);
+
                 }
+                $this->pluginMgr->endClass($pf, $class);
+
             }
+
             // Add or update the ParsedFile object in the current cache
             $this->parsedFileCache->addFile($pf);
         }

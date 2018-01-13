@@ -110,6 +110,42 @@ class PluginManager implements PluginRegistrar
         return $matches;
     }
 
+    public function startClass(ParsedFile $pf, Class_ $class)
+    {
+        foreach ($this->plugins as &$p) {
+            if ($p->active) {
+                $p->plugin->startClass($pf, $class);
+            }
+        }
+    }
+
+    public function startMethod(ParsedFile $pf, Class_ $class, Method $method)
+    {
+        foreach ($this->plugins as &$p) {
+            if ($p->active) {
+                $p->plugin->startMethod($pf, $class, $method);
+            }
+        }
+    }
+
+    public function endMethod(ParsedFile $pf, Class_ $class, Method $method)
+    {
+        foreach ($this->plugins as &$p) {
+            if ($p->active) {
+                $p->plugin->endMethod($pf, $class, $method);
+            }
+        }
+    }
+
+    public function endClass(ParsedFile $pf, Class_ $class)
+    {
+        foreach ($this->plugins as &$p) {
+            if ($p->active) {
+                $p->plugin->endClass($pf, $class);
+            }
+        }
+    }
+
     public function processClass(ParsedFile $pf, Class_ $class)
     {
         if (null !== ($cdb = $class->getDocBlock())) {
