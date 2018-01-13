@@ -19,13 +19,30 @@ use RichardGoldstein\FatFreeRoutes\Plugins\Plugin;
 
 class RoutePlugin extends Plugin
 {
+    /**
+     * @var bool Have we found a routeBase in the current class
+     */
     private $hasRouteBase = false;
+    /**
+     * @var string The routeBase found in the current class
+     */
     private $routeBase = '';
 
     // Post-parse data
+    /** @var Route[] The sorted route list generated after all of the files are processed  */
     private $routes = [];
 
 
+    /**
+     * Set plug-in specific command line options.
+     *
+     * Here we add a command line option to allow this plug-in to be disabled.
+     * No additional help text is returned.
+     *
+     * @param GetOpt $opts
+     *
+     * @return string
+     */
     public function setCommandLineOptions(GetOpt $opts)
     {
         $opts->addOption(
@@ -35,12 +52,25 @@ class RoutePlugin extends Plugin
         return '';
     }
 
+    /**
+     * Parse the command line options.
+     *
+     * Here we test the parsed command line to see if it includes the flag to disable this plug-in.
+     * @param GetOpt $opts
+     *
+     * @return bool Whether or not to include this plug-in
+     */
     public function parseOptions(GetOpt $opts)
     {
         // Return false if this is disabled.
         return !$opts->getOption('no-f3routes');
     }
 
+    /**
+     * Indicate the tags we are looking for in this plugin.
+     *
+     * @return array In the form [ 'prefix', string[] $tags, string[] $prefixRequiredTags ]
+     */
     public function tagsToProcess()
     {
         return ['f3routes',
@@ -61,6 +91,12 @@ class RoutePlugin extends Plugin
     const ROUTE_MAP_REGEX = '/(?:@?(.+?)\h*:\h*)?(@(\w+)|[^\h]+)(?:\h+(?:\[(\w+)\]))?/';
 
 
+    /**
+     * Prior to processing a new class, clear the routeBase data
+     *
+     * @param ParsedFile $pf
+     * @param Class_ $class
+     */
     public function startClass(ParsedFile $pf, Class_ $class)
     {
         parent::startClass($pf, $class);
@@ -69,10 +105,12 @@ class RoutePlugin extends Plugin
     }
 
     /**
+     * Process a matching tag at the class level
+     *
      * @param ParsedFile $pf
      * @param Class_ $class
-     * @param string $tag
-     * @param string $content
+     * @param string $tag Tag name, no prefix
+     * @param string $content Tag description, may be multi-line
      *
      * @throws \Exception
      */
@@ -162,11 +200,13 @@ class RoutePlugin extends Plugin
 
 
     /**
+     * Process a matching tag at the method level
+     *
      * @param ParsedFile $pf
      * @param Class_ $class
      * @param Method $method
-     * @param string $tag
-     * @param string $content
+     * @param string $tag Tag name, no prefix
+     * @param string $content Tag description, may be multi-line
      *
      * @throws \Exception
      */
@@ -183,7 +223,6 @@ class RoutePlugin extends Plugin
             // Doesnt work on re-aliased routes
 
             // Extract the path string ($parts[3])
-            /** @noinspection PhpUndefinedMethodInspection */
             if (preg_match(self::ROUTE_REGEX, $content, $parts)) {
                 $rpath = $this->routeBase . $parts[3];
                 if ($rpath != '/' && substr($rpath, -1, 1) == '/') {
@@ -273,6 +312,13 @@ class RoutePlugin extends Plugin
     }
 
 
+    /**
+     * Get the resulting routes, sorted by specificity
+     *
+     * @param ParsedFileCache $pfc
+     *
+     * @return Route[]
+     */
     private function getSortedRouteList(ParsedFileCache $pfc)
     {
         $a = [];
@@ -286,6 +332,8 @@ class RoutePlugin extends Plugin
     }
 
     /**
+     * After processing all files, sort the routes and test for duplicates.
+     *
      * @param ParsedFileCache $pfc
      *
      * @throws \Exception
@@ -320,6 +368,11 @@ class RoutePlugin extends Plugin
         }
     }
 
+    /**
+     * Generate PHP Code
+     *
+     * @return string PHP Code
+     */
     public function generatePHP()
     {
         $content = '';
@@ -343,6 +396,11 @@ class RoutePlugin extends Plugin
 
     }
 
+    /**
+     * generate JS Code
+     *
+     * @return string JS Code
+     */
     public function generateJS()
     {
         $lines = [];

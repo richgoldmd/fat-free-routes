@@ -13,7 +13,12 @@ foreach ([__DIR__ . '/../../../autoload.php', __DIR__ . '/../vendor/autoload.php
 
 $t = new \RichardGoldstein\FatFreeRoutes\TagProcessor();
 $x = new \RichardGoldstein\FatFreeRoutes\Plugins\Routes\RoutePlugin();
-$x->register($t);
+
+$t->registerPlugin($x);
+
+// This would also be valid:
+//$x->register($t);
+
 
 // Register plugins
 // Run

@@ -24,6 +24,11 @@ class MapRoute extends Route
         parent::__construct($route, $dest, $path, $tag, $alias, $emitJS);
     }
 
+    /**
+     * Override to generate map code
+     *
+     * @return string Generate PHP
+     */
     public function makePHP()
     {
         return "\$f3->map('{$this->path}', '{$this->dest}');" . PHP_EOL;

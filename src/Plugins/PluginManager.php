@@ -29,6 +29,8 @@ class PluginManager implements PluginRegistrar
     }
 
     /**
+     * Count the active plugins
+     *
      * @return int
      */
     public function countActive()
@@ -38,6 +40,13 @@ class PluginManager implements PluginRegistrar
         }, 0);
     }
 
+    /**
+     * @param string $prefix PSR-5 Compatible prefix for the tags
+     * @param string[] $tags Array of tags (without prefix)
+     * @param bool $prefixMandatory Is thre prefix mandatory for these tags
+     *
+     * @return null|string
+     */
     private function getRegex($prefix, $tags, $prefixMandatory)
     {
         if (!is_array($tags) || !count($tags)) {
