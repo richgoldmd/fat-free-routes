@@ -7,7 +7,7 @@
   ],
   "require": {
     "php": ">=7.0",
-    "phpdocumentor/reflection": "dev-develop",
+    "phpdocumentor/reflection": "dev-develop#208cd4547c822ba40f13955122940553da73c0ce",
     "phpdocumentor/reflection-common": "1.0.1",
     "phpdocumentor/reflection-docblock": "4.2.0",
     "phpdocumentor/type-resolver": "0.4.0",
