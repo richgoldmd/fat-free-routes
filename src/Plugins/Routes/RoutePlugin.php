@@ -423,8 +423,7 @@ class RoutePlugin extends Plugin
  *
  * Call this method from index.php before calling $f3->run();
  */
-function installRoutes($includeDev = true) {
-    $f3 = \Base::instance();
+function installRoutes($includeDev = true, $f3 = \Base::instance() ) {
 
 CODE_START;
 
