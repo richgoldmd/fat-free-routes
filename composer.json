@@ -7,13 +7,12 @@
     "fatfree",
     "F3"
   ],
+  "minimum-stability": "dev",
   "require": {
     "php": ">=7.0",
-    "phpdocumentor/reflection": "dev-develop#208cd4547c822ba40f13955122940553da73c0ce",
-    "phpdocumentor/reflection-common": "1.0.1",
-    "phpdocumentor/reflection-docblock": "4.2.0",
-    "phpdocumentor/type-resolver": "0.4.0",
-    "ulrichsg/getopt-php": "3.1"
+    "ulrichsg/getopt-php": "3.1",
+    "phpdocumentor/reflection": "dev-develop",
+    "phpdocumentor/reflection-docblock": "5.x-dev"
   },
   "autoload": {
     "psr-4": {
@@ -21,7 +20,6 @@
     }
   },
   "require-dev": {
-    "phpunit/phpunit": "^6"
   },
   "bin": [
     "bin/f3routes"

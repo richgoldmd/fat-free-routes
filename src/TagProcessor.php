@@ -16,6 +16,7 @@ use GetOpt\Option;
 use phpDocumentor\Reflection\File\LocalFile;
 use phpDocumentor\Reflection\Php\Class_;
 use phpDocumentor\Reflection\Php\Method;
+use phpDocumentor\Reflection\Php\Project;
 use phpDocumentor\Reflection\Php\ProjectFactory;
 use RichardGoldstein\FatFreeRoutes\Plugins\Plugin;
 use RichardGoldstein\FatFreeRoutes\Plugins\PluginManager;
@@ -275,6 +276,7 @@ class TagProcessor implements PluginRegistrar
     private function parseFiles()
     {
         $projectFactory = ProjectFactory::createInstance();
+        /** @var Project $project*/
         $project = $projectFactory->create('Routing', $this->filesToParse);
 
 
