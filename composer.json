@@ -9,8 +9,8 @@
   ],
   "minimum-stability": "dev",
   "require": {
-    "php": ">=7.0",
-    "ulrichsg/getopt-php": "3.1",
+    "php": ">=7.4",
+    "ulrichsg/getopt-php": "^4",
     "phpdocumentor/reflection": "4.0.1",
     "phpdocumentor/reflection-docblock": "5.x-dev"
   },
@@ -20,7 +20,8 @@
     }
   },
   "require-dev": {
-    "phpunit/phpunit": "8.5.x-dev"
+    "phpunit/phpunit": "8.5.x-dev",
+    "roave/security-advisories": "dev-latest"
   },
   "bin": [
     "bin/f3routes"
