@@ -2,3 +2,9 @@ vendor/
 .idea/
 .DS_Store
 composer.lock
+
+.phpunit.*
+cache.f3r
+test.js
+test.php
+test/out.js
